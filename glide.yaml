@@ -1,0 +1,17 @@
+
+package: github.com/giantswarm/endpoint-operator
+import:
+- package: github.com/giantswarm/microerror
+  version: master
+- package: github.com/giantswarm/microendpoint
+  version: master
+- package: github.com/giantswarm/microkit
+  version: master
+- package: github.com/giantswarm/micrologger
+  version: master
+- package: github.com/giantswarm/microstorage
+  version: master
+- package: github.com/giantswarm/operatorkit
+  version: master
+- package: github.com/giantswarm/k8shealthz
+  version: master
