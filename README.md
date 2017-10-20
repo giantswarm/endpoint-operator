@@ -18,8 +18,8 @@ TODO
 
 ## Contributing & Reporting Bugs
 
-See [CONTRIBUTING.md](/giantswarm/endpoint-operator/blob/master/CONTRIBUTING.md) for details on submitting patches, the contribution workflow as well as reporting bugs.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on submitting patches, the contribution workflow as well as reporting bugs.
 
 ## License
 
-endpoint-operator is under the Apache 2.0 license. See the [LICENSE](/giantswarm/endpoint-operator/blob/master/LICENSE) file for details.
+endpoint-operator is under the Apache 2.0 license. See the [LICENSE](LICENSE) file for details.
