@@ -22,4 +22,4 @@ See [CONTRIBUTING.md](/giantswarm/endpoint-operator/blob/master/CONTRIBUTING.md)
 
 ## License
 
-Shipyard is under the Apache 2.0 license. See the [LICENSE](/giantswarm/endpoint-operator/blob/master/LICENSE) file for details.
+endpoint-operator is under the Apache 2.0 license. See the [LICENSE](/giantswarm/endpoint-operator/blob/master/LICENSE) file for details.
