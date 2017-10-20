@@ -1,6 +1,5 @@
+[![CircleCI](https://circleci.com/gh/giantswarm/endpoint-operator.svg?style=shield)](https://circleci.com/gh/giantswarm/endpoint-operator) [![Docker Repository on Quay](https://quay.io/repository/giantswarm/endpoint-operator/status "Docker Repository on Quay")](https://quay.io/repository/giantswarm/endpoint-operator)
 # endpoint-operator
-
-[![CircleCI](https://circleci.com/gh/giantswarm/endpoint-operator.svg?style=svg)](https://circleci.com/gh/giantswarm/endpoint-operator) [![Docker Repository on Quay](https://quay.io/repository/giantswarm/endpoint-operator/status "Docker Repository on Quay")](https://quay.io/repository/giantswarm/endpoint-operator)
 
 
 ## Getting Project
