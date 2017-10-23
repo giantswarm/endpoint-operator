@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/spf13/viper"
 
@@ -139,11 +138,6 @@ func mainWithError() error {
 	daemonCommand.PersistentFlags().String(f.Service.Kubernetes.TLS.CAFile, "", "Certificate authority file path to use to authenticate with Kubernetes.")
 	daemonCommand.PersistentFlags().String(f.Service.Kubernetes.TLS.CrtFile, "", "Certificate file path to use to authenticate with Kubernetes.")
 	daemonCommand.PersistentFlags().String(f.Service.Kubernetes.TLS.KeyFile, "", "Key file path to use to authenticate with Kubernetes.")
-
-	daemonCommand.PersistentFlags().Int(f.Service.Resource.Retries, 3, "Number of times to retry resources.")
-	daemonCommand.PersistentFlags().Duration(f.Service.Operator.OperatorBackOffDuration, time.Minute*5, "Maximum backoff duration for operator")
-	daemonCommand.PersistentFlags().Duration(f.Service.Operator.FrameworkBackOffDuration, time.Minute*5, "Maximum backoff duration for operator framework.")
-	daemonCommand.PersistentFlags().Duration(f.Service.Operator.ResyncPeriod, time.Minute*1, "Operator resync period")
 
 	newCommand.CobraCommand().Execute()
 

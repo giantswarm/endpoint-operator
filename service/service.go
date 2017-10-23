@@ -2,6 +2,7 @@ package service
 
 import (
 	"sync"
+	"time"
 
 	"github.com/cenk/backoff"
 	"github.com/spf13/viper"
@@ -19,7 +20,11 @@ import (
 	"github.com/giantswarm/endpoint-operator/flag"
 	"github.com/giantswarm/endpoint-operator/service/healthz"
 	"github.com/giantswarm/endpoint-operator/service/operator"
-	serviceresource "github.com/giantswarm/endpoint-operator/service/resource/service"
+	endpointresource "github.com/giantswarm/endpoint-operator/service/resource/endpoint"
+)
+
+const (
+	ResourceRetries uint64 = 3
 )
 
 type Config struct {
@@ -98,14 +103,14 @@ func New(config Config) (*Service, error) {
 	var newOperatorBackOff *backoff.ExponentialBackOff
 	{
 		newOperatorBackOff = backoff.NewExponentialBackOff()
-		newOperatorBackOff.MaxElapsedTime = config.Viper.GetDuration(config.Flag.Service.Operator.OperatorBackOffDuration)
+		newOperatorBackOff.MaxElapsedTime = 5 * time.Minute
 	}
 
-	var newServiceResource framework.Resource
+	var newEndpointResource framework.Resource
 	{
-		serviceConfig := serviceresource.DefaultConfig()
+		endpointConfig := endpointresource.DefaultConfig()
 
-		newServiceResource, err = serviceresource.New(serviceConfig)
+		newEndpointResource, err = endpointresource.New(endpointConfig)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -114,7 +119,7 @@ func New(config Config) (*Service, error) {
 	var resources []framework.Resource
 	{
 		resources = []framework.Resource{
-			newServiceResource,
+			newEndpointResource,
 		}
 
 		logWrapConfig := logresource.DefaultWrapConfig()
@@ -126,7 +131,7 @@ func New(config Config) (*Service, error) {
 
 		retryWrapConfig := retryresource.DefaultWrapConfig()
 		retryWrapConfig.BackOffFactory = func() backoff.BackOff {
-			return backoff.WithMaxTries(backoff.NewExponentialBackOff(), uint64(config.Viper.GetDuration(config.Flag.Service.Resource.Retries)))
+			return backoff.WithMaxTries(backoff.NewExponentialBackOff(), ResourceRetries)
 		}
 		retryWrapConfig.Logger = config.Logger
 		resources, err = retryresource.Wrap(resources, retryWrapConfig)
@@ -147,7 +152,7 @@ func New(config Config) (*Service, error) {
 		frameworkConfig := framework.DefaultConfig()
 
 		newFrameworkBackOff := backoff.NewExponentialBackOff()
-		newFrameworkBackOff.MaxElapsedTime = config.Viper.GetDuration(config.Flag.Service.Operator.FrameworkBackOffDuration)
+		newFrameworkBackOff.MaxElapsedTime = 5 * time.Minute
 
 		frameworkConfig.BackOff = newFrameworkBackOff
 		frameworkConfig.Logger = config.Logger
@@ -164,11 +169,11 @@ func New(config Config) (*Service, error) {
 		operatorConfig := operator.DefaultConfig()
 
 		operatorConfig.BackOff = newOperatorBackOff
+		operatorConfig.Framework = newOperatorFramework
 		operatorConfig.K8sClient = newK8sClient
 		operatorConfig.Logger = config.Logger
-		operatorConfig.Framework = newOperatorFramework
 
-		operatorConfig.ResyncPeriod = config.Viper.GetDuration(config.Flag.Service.Operator.ResyncPeriod)
+		operatorConfig.ResyncPeriod = time.Minute * 5
 
 		newOperator, err = operator.New(operatorConfig)
 		if err != nil {

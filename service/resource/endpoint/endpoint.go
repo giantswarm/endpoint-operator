@@ -1,4 +1,4 @@
-package service
+package endpoint
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	Name = "service"
+	Name = "endpoint"
 )
 
 type Config struct{}

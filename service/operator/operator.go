@@ -35,7 +35,7 @@ func DefaultConfig() Config {
 		K8sClient: nil,
 		Logger:    nil,
 
-		ResyncPeriod: time.Duration(0),
+		ResyncPeriod: 0,
 	}
 }
 
@@ -79,7 +79,6 @@ func New(config Config) (*Operator, error) {
 
 		// Internals.
 		bootOnce:     sync.Once{},
-		mutex:        sync.Mutex{},
 		resyncPeriod: config.ResyncPeriod,
 	}
 
