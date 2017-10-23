@@ -1,27 +1,25 @@
 package operator
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/cenk/backoff"
-	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/tools/cache"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/informer"
 )
 
 type Config struct {
 	BackOff   backoff.BackOff
 	Framework *framework.Framework
+	Informer  *informer.Informer
 	K8sClient kubernetes.Interface
 	Logger    micrologger.Logger
 
@@ -32,6 +30,7 @@ func DefaultConfig() Config {
 	return Config{
 		BackOff:   nil,
 		Framework: nil,
+		Informer:  nil,
 		K8sClient: nil,
 		Logger:    nil,
 
@@ -43,6 +42,7 @@ type Operator struct {
 	// Dependencies.
 	backOff   backoff.BackOff
 	framework *framework.Framework
+	informer  *informer.Informer
 	k8sClient kubernetes.Interface
 	logger    micrologger.Logger
 
@@ -56,16 +56,18 @@ func New(config Config) (*Operator, error) {
 	if config.BackOff == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.BackOff must not be empty")
 	}
+	if config.Framework == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Framework must not be empty")
+	}
+	if config.Informer == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Informer must not be empty")
+	}
 	if config.K8sClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
 	}
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
-	if config.Framework == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Framework must not be empty")
-	}
-
 	if config.ResyncPeriod == 0 {
 		return nil, microerror.Maskf(invalidConfigError, "config.ResyncPeriod must not be zero")
 	}
@@ -74,6 +76,7 @@ func New(config Config) (*Operator, error) {
 		// Dependencies.
 		backOff:   config.BackOff,
 		framework: config.Framework,
+		informer:  config.Informer,
 		k8sClient: config.K8sClient,
 		logger:    config.Logger,
 
@@ -111,26 +114,8 @@ func (o *Operator) Boot() {
 func (o *Operator) bootWithError() error {
 	o.logger.Log("debug", "starting list/watch")
 
-	newResourceEventHandler := o.framework.NewCacheResourceEventHandler()
-
-	listWatch := &cache.ListWatch{
-		ListFunc: func(options apismetav1.ListOptions) (runtime.Object, error) {
-			o.logger.Log("debug", "listing all pods", "event", "list")
-			return o.k8sClient.CoreV1().Pods("").List(options)
-		},
-		WatchFunc: func(options apismetav1.ListOptions) (watch.Interface, error) {
-			o.logger.Log("debug", "watching all pods", "event", "watch")
-			return o.k8sClient.CoreV1().Pods("").Watch(options)
-		},
-	}
-
-	_, informer := cache.NewInformer(
-		listWatch,
-		&v1.Pod{},
-		o.resyncPeriod,
-		newResourceEventHandler,
-	)
-	informer.Run(nil)
+	deleteChan, updateChan, errChan := o.informer.Watch(context.TODO())
+	o.framework.ProcessEvents(context.TODO(), deleteChan, updateChan, errChan)
 
 	return nil
 }
