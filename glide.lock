@@ -1,10 +1,12 @@
 hash: 88976e89c36efbf4a644c888de711599f8ac0dadcec05ad658c93b4e9b84dd78
-updated: 2017-10-20T10:14:37.22702699+02:00
+updated: 2017-10-23T11:43:14.42030719+02:00
 imports:
 - name: github.com/beorn7/perks
   version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
   subpackages:
   - quantile
+- name: github.com/cenk/backoff
+  version: 309aa717adbf351e92864cbedf9cca0b769a4b5a
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
@@ -60,7 +62,11 @@ imports:
   subpackages:
   - memory
 - name: github.com/giantswarm/operatorkit
-  version: 57dd6cec0cc811e2bc2e2c8a56ea40f163673514
+  version: d306448fd014890db29087494a772af93e429d71
+  subpackages:
+  - client/k8sclient
+  - framework
+  - framework/context/canceledcontext
 - name: github.com/go-kit/kit
   version: a9ca6725cbbea455e61c6bc8a1ed28e81eb3493b
   subpackages:
@@ -100,6 +106,10 @@ imports:
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
   version: 0eeaf8392f5b04950925b8a69fe70f110fa7cbfc
+- name: github.com/hashicorp/golang-lru
+  version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
+  subpackages:
+  - simplelru
 - name: github.com/hashicorp/hcl
   version: 23c074d0eceb2b8a5bfdbb271ab780cde70f05a8
   subpackages:
@@ -169,9 +179,9 @@ imports:
 - name: github.com/spf13/jwalterweatherman
   version: 12bd96e66386c1960ab0f74ced1362f66f552f7b
 - name: github.com/spf13/pflag
-  version: 1f33b80956cde38911d1f23d764deb8d77a649ce
+  version: 97afa5e7ca8a08a383cb259e06636b5e2cc7897f
 - name: github.com/spf13/viper
-  version: d9cca5ef33035202efb1586825bdbb15ff9ec3ba
+  version: 8ef37cbca71638bf32f3d5e194117d4cb46da163
 - name: github.com/tylerb/graceful
   version: 4654dfbb6ad53cb5e27f37d99b02e16c1872fbbb
 - name: github.com/ugorji/go
@@ -209,13 +219,12 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/apimachinery
-  version: 1fd2e63a9a370677308a42f24fd40c86438afddf
+  version: 8ab5f3d8a330c2e9baaf84e39042db8d49034ae2
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
-  - pkg/api/testing
   - pkg/apimachinery
   - pkg/apimachinery/announced
   - pkg/apimachinery/registered
@@ -243,25 +252,18 @@ imports:
   - pkg/util/diff
   - pkg/util/errors
   - pkg/util/framer
-  - pkg/util/httpstream
-  - pkg/util/httpstream/spdy
   - pkg/util/intstr
   - pkg/util/json
-  - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/rand
-  - pkg/util/remotecommand
   - pkg/util/runtime
   - pkg/util/sets
-  - pkg/util/strategicpatch
   - pkg/util/validation
   - pkg/util/validation/field
   - pkg/util/wait
   - pkg/util/yaml
   - pkg/version
   - pkg/watch
-  - third_party/forked/golang/json
-  - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
   version: d92e8497f71b7b4e0494e5bd204b48d34bd6f254
@@ -329,6 +331,7 @@ imports:
   - pkg/version
   - rest
   - rest/watch
+  - tools/cache
   - tools/clientcmd/api
   - tools/metrics
   - transport
