@@ -162,7 +162,7 @@ func New(config Config) (*Service, error) {
 				return &podList
 			},
 		}
-		newWatcherFactory = informer.NewWatcherFactory(newK8sClient.Discovery().RESTClient(), "/api/v1/namespaces/${namespace}/pods/", zeroObjectFactory)
+		newWatcherFactory = informer.NewWatcherFactory(newK8sClient.Discovery().RESTClient(), "/api/v1/pods/", zeroObjectFactory)
 	}
 
 	var newInformer *informer.Informer
