@@ -3,6 +3,7 @@ package service
 import (
 	"sync"
 
+	"github.com/cenk/backoff"
 	"github.com/spf13/viper"
 	"k8s.io/client-go/kubernetes"
 
@@ -10,9 +11,15 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/operatorkit/client/k8sclient"
+	"github.com/giantswarm/operatorkit/framework"
+	"github.com/giantswarm/operatorkit/framework/resource/logresource"
+	"github.com/giantswarm/operatorkit/framework/resource/metricsresource"
+	"github.com/giantswarm/operatorkit/framework/resource/retryresource"
 
 	"github.com/giantswarm/endpoint-operator/flag"
 	"github.com/giantswarm/endpoint-operator/service/healthz"
+	"github.com/giantswarm/endpoint-operator/service/operator"
+	serviceresource "github.com/giantswarm/endpoint-operator/service/resource/service"
 )
 
 type Config struct {
@@ -40,8 +47,9 @@ func DefaultConfig() Config {
 }
 
 type Service struct {
-	Healthz *healthz.Service
-	Version *version.Service
+	Healthz  *healthz.Service
+	Operator *operator.Operator
+	Version  *version.Service
 
 	bootOnce sync.Once
 }
@@ -87,6 +95,87 @@ func New(config Config) (*Service, error) {
 		}
 	}
 
+	var newOperatorBackOff *backoff.ExponentialBackOff
+	{
+		newOperatorBackOff = backoff.NewExponentialBackOff()
+		newOperatorBackOff.MaxElapsedTime = config.Viper.GetDuration(config.Flag.Service.Operator.OperatorBackOffDuration)
+	}
+
+	var newServiceResource framework.Resource
+	{
+		serviceConfig := serviceresource.DefaultConfig()
+
+		newServiceResource, err = serviceresource.New(serviceConfig)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	var resources []framework.Resource
+	{
+		resources = []framework.Resource{
+			newServiceResource,
+		}
+
+		logWrapConfig := logresource.DefaultWrapConfig()
+		logWrapConfig.Logger = config.Logger
+		resources, err = logresource.Wrap(resources, logWrapConfig)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		retryWrapConfig := retryresource.DefaultWrapConfig()
+		retryWrapConfig.BackOffFactory = func() backoff.BackOff {
+			return backoff.WithMaxTries(backoff.NewExponentialBackOff(), uint64(config.Viper.GetDuration(config.Flag.Service.Resource.Retries)))
+		}
+		retryWrapConfig.Logger = config.Logger
+		resources, err = retryresource.Wrap(resources, retryWrapConfig)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		metricsWrapConfig := metricsresource.DefaultWrapConfig()
+		metricsWrapConfig.Name = config.Name
+		resources, err = metricsresource.Wrap(resources, metricsWrapConfig)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	var newOperatorFramework *framework.Framework
+	{
+		frameworkConfig := framework.DefaultConfig()
+
+		newFrameworkBackOff := backoff.NewExponentialBackOff()
+		newFrameworkBackOff.MaxElapsedTime = config.Viper.GetDuration(config.Flag.Service.Operator.FrameworkBackOffDuration)
+
+		frameworkConfig.BackOff = newFrameworkBackOff
+		frameworkConfig.Logger = config.Logger
+		frameworkConfig.Resources = resources
+
+		newOperatorFramework, err = framework.New(frameworkConfig)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	var newOperator *operator.Operator
+	{
+		operatorConfig := operator.DefaultConfig()
+
+		operatorConfig.BackOff = newOperatorBackOff
+		operatorConfig.K8sClient = newK8sClient
+		operatorConfig.Logger = config.Logger
+		operatorConfig.Framework = newOperatorFramework
+
+		operatorConfig.ResyncPeriod = config.Viper.GetDuration(config.Flag.Service.Operator.ResyncPeriod)
+
+		newOperator, err = operator.New(operatorConfig)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
 	var newVersionService *version.Service
 	{
 		versionConfig := version.DefaultConfig()
@@ -103,8 +192,9 @@ func New(config Config) (*Service, error) {
 	}
 
 	newService := &Service{
-		Healthz: newHealthzService,
-		Version: newVersionService,
+		Healthz:  newHealthzService,
+		Operator: newOperator,
+		Version:  newVersionService,
 
 		bootOnce: sync.Once{},
 	}
@@ -113,5 +203,7 @@ func New(config Config) (*Service, error) {
 }
 
 func (s *Service) Boot() {
-	s.bootOnce.Do(func() {})
+	s.bootOnce.Do(func() {
+		s.Operator.Boot()
+	})
 }
