@@ -113,6 +113,9 @@ func New(config Config) (*Service, error) {
 	{
 		endpointConfig := endpointresource.DefaultConfig()
 
+		endpointConfig.K8sClient = newK8sClient
+		endpointConfig.Logger = config.Logger
+
 		newEndpointResource, err = endpointresource.New(endpointConfig)
 		if err != nil {
 			return nil, microerror.Mask(err)
