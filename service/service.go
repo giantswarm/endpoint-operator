@@ -6,7 +6,9 @@ import (
 
 	"github.com/cenk/backoff"
 	"github.com/spf13/viper"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
 
 	"github.com/giantswarm/microendpoint/service/version"
 	"github.com/giantswarm/microerror"
@@ -16,6 +18,7 @@ import (
 	"github.com/giantswarm/operatorkit/framework/resource/logresource"
 	"github.com/giantswarm/operatorkit/framework/resource/metricsresource"
 	"github.com/giantswarm/operatorkit/framework/resource/retryresource"
+	"github.com/giantswarm/operatorkit/informer"
 
 	"github.com/giantswarm/endpoint-operator/flag"
 	"github.com/giantswarm/endpoint-operator/service/healthz"
@@ -146,6 +149,37 @@ func New(config Config) (*Service, error) {
 			return nil, microerror.Mask(err)
 		}
 	}
+	var newWatcherFactory informer.WatcherFactory
+	{
+
+		zeroObjectFactory := &informer.ZeroObjectFactoryFuncs{
+			NewObjectFunc: func() runtime.Object {
+				var pod api.Pod
+				return &pod
+			},
+			NewObjectListFunc: func() runtime.Object {
+				var podList api.PodList
+				return &podList
+			},
+		}
+		newWatcherFactory = informer.NewWatcherFactory(newK8sClient.Discovery().RESTClient(), "/api/v1/watch/pods/", zeroObjectFactory)
+	}
+
+	var newInformer *informer.Informer
+	{
+		informerConfig := informer.DefaultConfig()
+
+		informerConfig.BackOff = backoff.NewExponentialBackOff()
+		informerConfig.WatcherFactory = newWatcherFactory
+
+		informerConfig.RateWait = time.Second * 10
+		informerConfig.ResyncPeriod = time.Minute * 5
+
+		newInformer, err = informer.New(informerConfig)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
 
 	var newOperatorFramework *framework.Framework
 	{
@@ -170,6 +204,7 @@ func New(config Config) (*Service, error) {
 
 		operatorConfig.BackOff = newOperatorBackOff
 		operatorConfig.Framework = newOperatorFramework
+		operatorConfig.Informer = newInformer
 		operatorConfig.K8sClient = newK8sClient
 		operatorConfig.Logger = config.Logger
 
