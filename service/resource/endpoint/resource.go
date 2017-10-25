@@ -65,3 +65,16 @@ func toPod(v interface{}) (*apiv1.Pod, error) {
 
 	return pod, nil
 }
+
+func getAnnotations(pod apiv1.Pod, names []string) (map[string]string, error) {
+	annotations := make(map[string]string)
+	for _, name := range names {
+		annotation, ok := pod.GetAnnotations()[name]
+		if ok {
+			annotations[name] = annotation
+		} else {
+			return nil, microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", name)
+		}
+	}
+	return annotations, nil
+}

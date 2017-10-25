@@ -6,6 +6,7 @@ import (
 
 var invalidConfigError = microerror.New("invalid config")
 var wrongTypeError = microerror.New("wrong type")
+var missingAnnotationError = microerror.New("annotation missing")
 
 // IsInvalidConfig asserts invalidConfigError.
 func IsInvalidConfig(err error) bool {
@@ -13,4 +14,7 @@ func IsInvalidConfig(err error) bool {
 }
 func IsWrongTypeError(err error) bool {
 	return microerror.Cause(err) == wrongTypeError
+}
+func MissingAnnotationError(err error) bool {
+	return microerror.Cause(err) == missingAnnotationError
 }

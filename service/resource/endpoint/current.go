@@ -7,29 +7,31 @@ import (
 	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 )
 
+const (
+	ipAnnotation      = "endpoint.kvm.giantswarm.io/ip"
+	serviceAnnotation = "endpoint.kvm.giantswarm.io/service"
+)
+
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
 
 	pod, err := toPod(obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-	podAnnotations := pod.GetAnnotations()
-	podIP, ipOk := podAnnotations["endpoint.kvm.giantswarm.io/ip"]
-	podServiceName, serviceNameOk := pod.Annotations["endpoint.kvm.giantswarm.io/service"]
 
-	if !(ipOk && serviceNameOk) {
+	annotations, err := getAnnotations(*pod, []string{ipAnnotation, serviceAnnotation})
+	if err != nil {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
 			r.logger.Log("pod", pod.GetName(), "debug", "canceling reconciliation for pod")
-
 			return nil, nil
 		}
 	}
 
 	endpoint := &Endpoint{
-		ServiceName:      podServiceName,
+		IP:               annotations[ipAnnotation],
+		ServiceName:      annotations[serviceAnnotation],
 		ServiceNamespace: pod.GetNamespace(),
-		IP:               podIP,
 	}
 
 	return endpoint, nil

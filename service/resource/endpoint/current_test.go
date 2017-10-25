@@ -16,10 +16,6 @@ func Test_Resource_Endpoint_GetCurrentState(t *testing.T) {
 		Obj              interface{}
 		ExpectedEndpoint *Endpoint
 	}{
-		/*{
-			Obj:              &apiv1.Pod{},
-			ExpectedEndpoint: nil,
-		},*/
 		{
 			Obj: &apiv1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
