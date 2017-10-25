@@ -4,18 +4,47 @@ import (
 	"context"
 
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
-	r.logger.Log("debug", "fetching a list of all current endpoints")
 
-	endpointList, err := r.k8sClient.CoreV1().Endpoints("").List(metav1.ListOptions{})
+	pod, err := toPod(obj)
 	if err != nil {
-		return nil, microerror.Maskf(err, "an error occurred fetching the list endpoins")
+		return nil, microerror.Mask(err)
+	}
+	podAnnotations := pod.GetAnnotations()
+	podIP, ipOk := podAnnotations["endpoint.kvm.giantswarm.io/ip"]
+	podServiceName, serviceNameOk := pod.Annotations["endpoint.kvm.giantswarm.io/service"]
+
+	if !(ipOk && serviceNameOk) {
+		canceledcontext.SetCanceled(ctx)
+		if canceledcontext.IsCanceled(ctx) {
+			r.logger.Log("pod", pod.GetName(), "debug", "canceling reconciliation for pod")
+
+			return nil, nil
+		}
 	}
 
-	r.logger.Log("debug", "found a list of all current endpoints")
-	return endpointList, nil
+	endpoint := Endpoint{
+		ServiceName:      podServiceName,
+		ServiceNamespace: pod.GetNamespace(),
+		EndpointAddress: apiv1.EndpointAddress{
+			IP: podIP,
+
+			// NodeName and TargetRef are optional but included here, to keep the EndpointAddress complete.
+			NodeName: &pod.Spec.NodeName,
+			TargetRef: &apiv1.ObjectReference{
+				Kind:            "Pod",
+				Namespace:       pod.ObjectMeta.Namespace,
+				Name:            pod.ObjectMeta.Name,
+				UID:             pod.ObjectMeta.UID,
+				ResourceVersion: pod.ObjectMeta.ResourceVersion,
+			},
+		},
+	}
+
+	return endpoint, nil
 }
