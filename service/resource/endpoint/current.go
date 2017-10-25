@@ -5,8 +5,6 @@ import (
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
-
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
@@ -28,22 +26,10 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 		}
 	}
 
-	endpoint := Endpoint{
+	endpoint := &Endpoint{
 		ServiceName:      podServiceName,
 		ServiceNamespace: pod.GetNamespace(),
-		EndpointAddress: apiv1.EndpointAddress{
-			IP: podIP,
-
-			// NodeName and TargetRef are optional but included here, to keep the EndpointAddress complete.
-			NodeName: &pod.Spec.NodeName,
-			TargetRef: &apiv1.ObjectReference{
-				Kind:            "Pod",
-				Namespace:       pod.ObjectMeta.Namespace,
-				Name:            pod.ObjectMeta.Name,
-				UID:             pod.ObjectMeta.UID,
-				ResourceVersion: pod.ObjectMeta.ResourceVersion,
-			},
-		},
+		IP:               podIP,
 	}
 
 	return endpoint, nil

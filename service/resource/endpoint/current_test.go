@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/giantswarm/micrologger/microloggertest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
@@ -15,9 +16,26 @@ func Test_Resource_Endpoint_GetCurrentState(t *testing.T) {
 		Obj              interface{}
 		ExpectedEndpoint *Endpoint
 	}{
-		{
+		/*{
 			Obj:              &apiv1.Pod{},
 			ExpectedEndpoint: nil,
+		},*/
+		{
+			Obj: &apiv1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestPod",
+					Namespace: "TestNamespace",
+					Annotations: map[string]string{
+						"endpoint.kvm.giantswarm.io/ip":      "1.1.1.1",
+						"endpoint.kvm.giantswarm.io/service": "TestService",
+					},
+				},
+			},
+			ExpectedEndpoint: &Endpoint{
+				IP:               "1.1.1.1",
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
 		},
 	}
 
