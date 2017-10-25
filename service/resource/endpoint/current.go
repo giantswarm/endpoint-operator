@@ -13,24 +13,25 @@ const (
 )
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
-
 	pod, err := toPod(obj)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	annotations, err := getAnnotations(*pod, []string{ipAnnotation, serviceAnnotation})
-	if err != nil {
+	ipAnnotationValue, serviceAnnotationValue, err := getAnnotations(*pod, ipAnnotation, serviceAnnotation)
+	if MissingAnnotationError(err) {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
 			r.logger.Log("pod", pod.GetName(), "debug", "canceling reconciliation for pod")
 			return nil, nil
 		}
+	} else if err != nil {
+		return nil, microerror.Maskf(err, "an error occurred while fetching the annotations of the pod")
 	}
 
 	endpoint := &Endpoint{
-		IP:               annotations[ipAnnotation],
-		ServiceName:      annotations[serviceAnnotation],
+		IP:               ipAnnotationValue,
+		ServiceName:      serviceAnnotationValue,
 		ServiceNamespace: pod.GetNamespace(),
 	}
 
