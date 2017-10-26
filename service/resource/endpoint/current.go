@@ -3,13 +3,11 @@ package endpoint
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
-)
-
-const (
-	ipAnnotation      = "endpoint.kvm.giantswarm.io/ip"
-	serviceAnnotation = "endpoint.kvm.giantswarm.io/service"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
@@ -18,7 +16,8 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 		return nil, microerror.Mask(err)
 	}
 
-	ipAnnotationValue, serviceAnnotationValue, err := getAnnotations(*pod, ipAnnotation, serviceAnnotation)
+	serviceNamespace := pod.GetNamespace()
+	_, serviceName, err := getAnnotations(*pod, IPAnnotation, ServiceAnnotation)
 	if IsMissingAnnotationError(err) {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
@@ -29,11 +28,25 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 		return nil, microerror.Maskf(err, "an error occurred while fetching the annotations of the pod")
 	}
 
-	endpoint := &Endpoint{
-		IP:               ipAnnotationValue,
-		ServiceName:      serviceAnnotationValue,
-		ServiceNamespace: pod.GetNamespace(),
+	currentEndpoints := []Endpoint{}
+	k8sEndpoints, err := r.k8sClient.CoreV1().Endpoints(serviceNamespace).Get(serviceName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, microerror.Mask(err)
 	}
 
-	return endpoint, nil
+	for _, endpointSubset := range k8sEndpoints.Subsets {
+		for _, endpointAddress := range endpointSubset.Addresses {
+			foundEndpoint := Endpoint{
+				IP:               endpointAddress.IP,
+				ServiceName:      serviceName,
+				ServiceNamespace: serviceNamespace,
+			}
+			if !containsEndpoint(currentEndpoints, foundEndpoint) {
+				currentEndpoints = append(currentEndpoints, foundEndpoint)
+			}
+		}
+	}
+	return currentEndpoints, nil
 }

@@ -6,128 +6,57 @@ import (
 	"testing"
 
 	"github.com/giantswarm/micrologger/microloggertest"
+	"github.com/giantswarm/operatorkit/framework/context/canceledcontext"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/pkg/api/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func Test_Resource_Endpoint_GetDesiredState(t *testing.T) {
 	testCases := []struct {
-		Obj               interface{}
-		SetupEndpoints    []*v1.Endpoints
-		ExpectedEndpoints []Endpoint
+		Obj              interface{}
+		ExpectedEndpoint interface{}
 	}{
 		{
-			Obj: &Endpoint{
-				IP:               "1.1.1.1",
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedEndpoints: []Endpoint{
-				Endpoint{
-					IP:               "1.1.1.1",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
-				},
-			},
-		},
-		{
-			Obj: &Endpoint{
-				IP:               "1.1.1.1",
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			SetupEndpoints: []*v1.Endpoints{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "TestService",
-						Namespace: "TestNamespace",
-					},
-					Subsets: []v1.EndpointSubset{
-						{
-							Addresses: []v1.EndpointAddress{
-								{
-									IP: "1.1.1.1",
-								},
-							},
-						},
+			Obj: &apiv1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestPod",
+					Namespace: "TestNamespace",
+					Annotations: map[string]string{
+						"endpoint.kvm.giantswarm.io/ip":      "1.1.1.1",
+						"endpoint.kvm.giantswarm.io/service": "TestService",
 					},
 				},
 			},
-			ExpectedEndpoints: []Endpoint{
-				Endpoint{
-					IP:               "1.1.1.1",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
-				},
-			},
-		},
-		{
-			Obj: &Endpoint{
-				IP:               "1.1.1.1",
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			SetupEndpoints: []*v1.Endpoints{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "TestService",
-						Namespace: "TestNamespace",
-					},
-					Subsets: []v1.EndpointSubset{
-						{
-							Addresses: []v1.EndpointAddress{
-								{
-									IP: "1.1.1.1",
-								},
-								{
-									IP: "1.2.3.4",
-								},
-							},
-						},
-					},
-				},
-			},
-			ExpectedEndpoints: []Endpoint{
+			ExpectedEndpoint: []Endpoint{
 				{
 					IP:               "1.1.1.1",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
-				},
-				{
-					IP:               "1.2.3.4",
 					ServiceName:      "TestService",
 					ServiceNamespace: "TestNamespace",
 				},
 			},
 		},
 	}
+
 	var err error
+	var newResource *Resource
+	{
+		resourceConfig := DefaultConfig()
+		resourceConfig.K8sClient = fake.NewSimpleClientset()
+		resourceConfig.Logger = microloggertest.New()
+		newResource, err = New(resourceConfig)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+	}
 
 	for i, tc := range testCases {
-		fakeK8sClient := fake.NewSimpleClientset()
-		var newResource *Resource
-		{
-			resourceConfig := DefaultConfig()
-			resourceConfig.K8sClient = fakeK8sClient
-			resourceConfig.Logger = microloggertest.New()
-			newResource, err = New(resourceConfig)
-			if err != nil {
-				t.Fatal("expected", nil, "got", err)
-			}
-		}
-
-		for _, k8sEndpoint := range tc.SetupEndpoints {
-			if _, err := fakeK8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Create(k8sEndpoint); err != nil {
-				t.Fatalf("%d: error returned setting up k8s endpoint: %s\n", i, err)
-			}
-		}
-		result, err := newResource.GetDesiredState(context.TODO(), tc.Obj)
+		result, err := newResource.GetDesiredState(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}
-		if !reflect.DeepEqual(tc.ExpectedEndpoints, result) {
-			t.Fatalf("case %d expected %#v got %#v", i+1, tc.ExpectedEndpoints, result)
+		if !reflect.DeepEqual(tc.ExpectedEndpoint, result) {
+			t.Fatalf("case %d expected %#v got %#v", i+1, tc.ExpectedEndpoint, result)
 		}
 	}
 }

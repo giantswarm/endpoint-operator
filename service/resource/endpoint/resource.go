@@ -10,7 +10,9 @@ import (
 )
 
 const (
-	Name = "endpoint"
+	IPAnnotation      = "endpoint.kvm.giantswarm.io/ip"
+	Name              = "endpoint"
+	ServiceAnnotation = "endpoint.kvm.giantswarm.io/service"
 )
 
 type Config struct {
@@ -53,6 +55,15 @@ func (r *Resource) Underlying() framework.Resource {
 	return r
 }
 
+func containsEndpoint(endpoints []Endpoint, endpoint Endpoint) bool {
+	for _, foundEndpoint := range endpoints {
+		if foundEndpoint == endpoint {
+			return true
+		}
+	}
+	return false
+}
+
 func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationName string) (ipAnnotationValue string, serviceAnnotationValue string, err error) {
 	ipAnnotationValue, ok := pod.GetAnnotations()[ipAnnotationName]
 	if !ok {
@@ -63,15 +74,6 @@ func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationNam
 		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", serviceAnnotationName)
 	}
 	return ipAnnotationValue, serviceAnnotationValue, nil
-}
-
-func isEndpointInEndpoints(endpoint Endpoint, endpoints []Endpoint) bool {
-	for _, foundEndpoint := range endpoints {
-		if foundEndpoint == endpoint {
-			return true
-		}
-	}
-	return false
 }
 
 func toEndpoint(v interface{}) (*Endpoint, error) {
