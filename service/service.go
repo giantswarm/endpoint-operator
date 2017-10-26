@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 
 	"github.com/giantswarm/microendpoint/service/version"
 	"github.com/giantswarm/microerror"
@@ -113,6 +113,9 @@ func New(config Config) (*Service, error) {
 	{
 		endpointConfig := endpointresource.DefaultConfig()
 
+		endpointConfig.K8sClient = newK8sClient
+		endpointConfig.Logger = config.Logger
+
 		newEndpointResource, err = endpointresource.New(endpointConfig)
 		if err != nil {
 			return nil, microerror.Mask(err)
@@ -154,11 +157,11 @@ func New(config Config) (*Service, error) {
 
 		zeroObjectFactory := &informer.ZeroObjectFactoryFuncs{
 			NewObjectFunc: func() runtime.Object {
-				var pod api.Pod
+				var pod apiv1.Pod
 				return &pod
 			},
 			NewObjectListFunc: func() runtime.Object {
-				var podList api.PodList
+				var podList apiv1.PodList
 				return &podList
 			},
 		}
