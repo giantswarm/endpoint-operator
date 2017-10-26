@@ -19,7 +19,7 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 	}
 
 	ipAnnotationValue, serviceAnnotationValue, err := getAnnotations(*pod, ipAnnotation, serviceAnnotation)
-	if MissingAnnotationError(err) {
+	if IsMissingAnnotationError(err) {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
 			r.logger.Log("pod", pod.GetName(), "debug", "canceling reconciliation for pod")
