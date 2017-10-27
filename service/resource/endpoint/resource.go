@@ -76,17 +76,15 @@ func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationNam
 	return ipAnnotationValue, serviceAnnotationValue, nil
 }
 
-func toEndpoint(v interface{}) (*Endpoint, error) {
+func toEndpointSlice(v interface{}) ([]Endpoint, error) {
 	if v == nil {
 		return nil, nil
 	}
-
-	endpoint, ok := v.(*Endpoint)
+	endpoints, ok := v.([]Endpoint)
 	if !ok {
-		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &Endpoint{}, v)
+		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", []Endpoint{}, v)
 	}
-
-	return endpoint, nil
+	return endpoints, nil
 }
 
 func toPod(v interface{}) (*apiv1.Pod, error) {
