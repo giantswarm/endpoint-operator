@@ -10,7 +10,9 @@ import (
 )
 
 const (
-	Name = "endpoint"
+	IPAnnotation      = "endpoint.kvm.giantswarm.io/ip"
+	Name              = "endpoint"
+	ServiceAnnotation = "endpoint.kvm.giantswarm.io/service"
 )
 
 type Config struct {
@@ -53,17 +55,13 @@ func (r *Resource) Underlying() framework.Resource {
 	return r
 }
 
-func toPod(v interface{}) (*apiv1.Pod, error) {
-	if v == nil {
-		return nil, nil
+func containsEndpoint(endpoints []Endpoint, endpoint Endpoint) bool {
+	for _, foundEndpoint := range endpoints {
+		if foundEndpoint == endpoint {
+			return true
+		}
 	}
-
-	pod, ok := v.(*apiv1.Pod)
-	if !ok {
-		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &apiv1.Pod{}, v)
-	}
-
-	return pod, nil
+	return false
 }
 
 func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationName string) (ipAnnotationValue string, serviceAnnotationValue string, err error) {
@@ -76,4 +74,30 @@ func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationNam
 		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", serviceAnnotationName)
 	}
 	return ipAnnotationValue, serviceAnnotationValue, nil
+}
+
+func toEndpoint(v interface{}) (*Endpoint, error) {
+	if v == nil {
+		return nil, nil
+	}
+
+	endpoint, ok := v.(*Endpoint)
+	if !ok {
+		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &Endpoint{}, v)
+	}
+
+	return endpoint, nil
+}
+
+func toPod(v interface{}) (*apiv1.Pod, error) {
+	if v == nil {
+		return nil, nil
+	}
+
+	pod, ok := v.(*apiv1.Pod)
+	if !ok {
+		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &apiv1.Pod{}, v)
+	}
+
+	return pod, nil
 }
