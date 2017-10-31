@@ -76,6 +76,15 @@ func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationNam
 	return ipAnnotationValue, serviceAnnotationValue, nil
 }
 
+func removeIP(ips []string, ip string) []string {
+	for index, foundIP := range ips {
+		if foundIP == ip {
+			return append(ips[:index], ips[index+1:]...)
+		}
+	}
+	return ips
+}
+
 func toEndpoint(v interface{}) (Endpoint, error) {
 	if v == nil {
 		return Endpoint{}, nil
