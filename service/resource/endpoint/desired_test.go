@@ -30,7 +30,7 @@ func Test_Resource_Endpoint_GetDesiredState(t *testing.T) {
 				},
 			},
 			ExpectedEndpoint: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",

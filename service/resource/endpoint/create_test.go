@@ -21,21 +21,21 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 	}{
 		{
 			CurrentState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
 			DesiredState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
 			ExpectedCreateState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
@@ -44,7 +44,7 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 		},
 		{
 			CurrentState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 					"1.2.3.4",
 				},
@@ -52,14 +52,14 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 				ServiceNamespace: "TestNamespace",
 			},
 			DesiredState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
 			ExpectedCreateState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 					"1.2.3.4",
 				},
@@ -69,7 +69,7 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 		},
 		{
 			CurrentState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"5.5.5.5",
 					"1.2.3.4",
 				},
@@ -77,14 +77,14 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 				ServiceNamespace: "TestNamespace",
 			},
 			DesiredState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
 			ExpectedCreateState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"5.5.5.5",
 					"1.2.3.4",
 					"1.1.1.1",
@@ -99,14 +99,14 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 				ServiceNamespace: "TestNamespace",
 			},
 			DesiredState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
 			ExpectedCreateState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
@@ -115,7 +115,7 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 		},
 		{
 			CurrentState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
@@ -123,7 +123,7 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 			},
 			DesiredState: nil,
 			ExpectedCreateState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
@@ -168,7 +168,7 @@ func Test_Resource_Endpoint_ProcessCreateState(t *testing.T) {
 	}{
 		{
 			CreateState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.2.3.4",
 					"1.1.1.1",
 				},
@@ -235,7 +235,7 @@ func Test_Resource_Endpoint_ProcessCreateState(t *testing.T) {
 		},
 		{
 			CreateState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.2.3.4",
 					"1.1.1.1",
 				},
@@ -321,7 +321,7 @@ func Test_Resource_Endpoint_ProcessCreateState(t *testing.T) {
 		},
 		{
 			CreateState: Endpoint{
-				IP: []string{
+				IPs: []string{
 					"1.2.3.4",
 					"5.6.7.8",
 					"1.1.1.1",

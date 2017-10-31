@@ -18,7 +18,7 @@ func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interf
 	}
 
 	desiredEndpoint := Endpoint{
-		IP: []string{
+		IPs: []string{
 			endpointIP,
 		},
 		ServiceName:      serviceName,

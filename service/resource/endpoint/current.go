@@ -29,7 +29,7 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 	}
 
 	currentEndpoint := Endpoint{
-		IP:               []string{},
+		IPs:              []string{},
 		ServiceName:      serviceName,
 		ServiceNamespace: serviceNamespace,
 	}
@@ -44,8 +44,8 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 		for _, endpointAddress := range endpointSubset.Addresses {
 			foundIP := endpointAddress.IP
 
-			if !containsIP(currentEndpoint.IP, foundIP) {
-				currentEndpoint.IP = append(currentEndpoint.IP, foundIP)
+			if !containsIP(currentEndpoint.IPs, foundIP) {
+				currentEndpoint.IPs = append(currentEndpoint.IPs, foundIP)
 			}
 		}
 	}

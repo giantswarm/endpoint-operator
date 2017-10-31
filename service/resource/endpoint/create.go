@@ -23,14 +23,14 @@ func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desire
 		ServiceName:      currentEndpoint.ServiceName,
 		ServiceNamespace: currentEndpoint.ServiceNamespace,
 	}
-	for _, currentIP := range currentEndpoint.IP {
-		if !containsIP(createState.IP, currentIP) {
-			createState.IP = append(createState.IP, currentIP)
+	for _, currentIP := range currentEndpoint.IPs {
+		if !containsIP(createState.IPs, currentIP) {
+			createState.IPs = append(createState.IPs, currentIP)
 		}
 	}
-	for _, desiredIP := range desiredEndpoint.IP {
-		if !containsIP(createState.IP, desiredIP) {
-			createState.IP = append(createState.IP, desiredIP)
+	for _, desiredIP := range desiredEndpoint.IPs {
+		if !containsIP(createState.IPs, desiredIP) {
+			createState.IPs = append(createState.IPs, desiredIP)
 		}
 	}
 
@@ -43,13 +43,13 @@ func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState inte
 		return microerror.Mask(err)
 	}
 
-	if len(endpointToCreate.IP) == 0 {
+	if len(endpointToCreate.IPs) == 0 {
 		// Nothing to do.
 		return nil
 	}
 
 	k8sAddresses := []apiv1.EndpointAddress{}
-	for _, endpointIP := range endpointToCreate.IP {
+	for _, endpointIP := range endpointToCreate.IPs {
 		k8sAddress := apiv1.EndpointAddress{
 			IP: endpointIP,
 		}
