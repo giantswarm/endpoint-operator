@@ -55,9 +55,9 @@ func (r *Resource) Underlying() framework.Resource {
 	return r
 }
 
-func containsEndpoint(endpoints []Endpoint, endpoint Endpoint) bool {
-	for _, foundEndpoint := range endpoints {
-		if foundEndpoint == endpoint {
+func containsIP(ips []string, ip string) bool {
+	for _, foundIP := range ips {
+		if foundIP == ip {
 			return true
 		}
 	}
@@ -76,15 +76,15 @@ func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationNam
 	return ipAnnotationValue, serviceAnnotationValue, nil
 }
 
-func toEndpointSlice(v interface{}) ([]Endpoint, error) {
+func toEndpoint(v interface{}) (Endpoint, error) {
 	if v == nil {
-		return nil, nil
+		return Endpoint{}, nil
 	}
-	endpoints, ok := v.([]Endpoint)
+	endpoint, ok := v.(Endpoint)
 	if !ok {
-		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", []Endpoint{}, v)
+		return Endpoint{}, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", Endpoint{}, v)
 	}
-	return endpoints, nil
+	return endpoint, nil
 }
 
 func toPod(v interface{}) (*apiv1.Pod, error) {
