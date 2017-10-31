@@ -28,7 +28,11 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 		return nil, microerror.Maskf(err, "an error occurred while fetching the annotations of the pod")
 	}
 
-	currentEndpoints := []Endpoint{}
+	currentEndpoint := Endpoint{
+		IPs:              []string{},
+		ServiceName:      serviceName,
+		ServiceNamespace: serviceNamespace,
+	}
 	k8sEndpoints, err := r.k8sClient.CoreV1().Endpoints(serviceNamespace).Get(serviceName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		return nil, nil
@@ -38,15 +42,12 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 
 	for _, endpointSubset := range k8sEndpoints.Subsets {
 		for _, endpointAddress := range endpointSubset.Addresses {
-			foundEndpoint := Endpoint{
-				IP:               endpointAddress.IP,
-				ServiceName:      serviceName,
-				ServiceNamespace: serviceNamespace,
-			}
-			if !containsEndpoint(currentEndpoints, foundEndpoint) {
-				currentEndpoints = append(currentEndpoints, foundEndpoint)
+			foundIP := endpointAddress.IP
+
+			if !containsIP(currentEndpoint.IPs, foundIP) {
+				currentEndpoint.IPs = append(currentEndpoint.IPs, foundIP)
 			}
 		}
 	}
-	return currentEndpoints, nil
+	return currentEndpoint, nil
 }

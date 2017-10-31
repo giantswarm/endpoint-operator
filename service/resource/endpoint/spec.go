@@ -1,7 +1,7 @@
 package endpoint
 
 type Endpoint struct {
-	IP               string
+	IPs              []string
 	ServiceName      string
 	ServiceNamespace string
 }

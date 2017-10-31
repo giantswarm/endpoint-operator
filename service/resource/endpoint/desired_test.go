@@ -29,12 +29,12 @@ func Test_Resource_Endpoint_GetDesiredState(t *testing.T) {
 					},
 				},
 			},
-			ExpectedEndpoint: []Endpoint{
-				{
-					IP:               "1.1.1.1",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
+			ExpectedEndpoint: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
 				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
 			},
 			ExpectedErrorHandler: nil,
 		},

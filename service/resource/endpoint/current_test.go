@@ -93,12 +93,12 @@ func Test_Resource_Endpoint_GetCurrentState(t *testing.T) {
 					},
 				},
 			},
-			ExpectedEndpoints: []Endpoint{
-				{
-					IP:               "1.1.1.1",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
+			ExpectedEndpoints: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
 				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
 			},
 		},
 		{
@@ -132,17 +132,13 @@ func Test_Resource_Endpoint_GetCurrentState(t *testing.T) {
 					},
 				},
 			},
-			ExpectedEndpoints: []Endpoint{
-				{
-					IP:               "1.1.1.1",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
+			ExpectedEndpoints: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+					"1.2.3.4",
 				},
-				{
-					IP:               "1.2.3.4",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
-				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
 			},
 		},
 		{
@@ -183,17 +179,13 @@ func Test_Resource_Endpoint_GetCurrentState(t *testing.T) {
 					},
 				},
 			},
-			ExpectedEndpoints: []Endpoint{
-				{
-					IP:               "1.1.1.1",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
+			ExpectedEndpoints: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+					"1.2.3.4",
 				},
-				{
-					IP:               "1.2.3.4",
-					ServiceName:      "TestService",
-					ServiceNamespace: "TestNamespace",
-				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
 			},
 		},
 	}
