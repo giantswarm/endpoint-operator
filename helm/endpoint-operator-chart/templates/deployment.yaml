@@ -45,4 +45,4 @@ spec:
             cpu: 250m
             memory: 250Mi
       imagePullSecrets:
-- name: endpoint-operator-pull-secret
+      - name: endpoint-operator-pull-secret
