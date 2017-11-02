@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -22,7 +23,7 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 	if IsMissingAnnotationError(err) {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
-			r.logger.Log("pod", pod.GetName(), "debug", "canceling reconciliation for pod, no annotations found")
+			r.logger.Log("pod", pod.GetName(), "debug", fmt.Sprintf("canceling reconciliation for pod,%#v", microerror.Mask(err)))
 			return nil, nil
 		}
 	} else if err != nil {
