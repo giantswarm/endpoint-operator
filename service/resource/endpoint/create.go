@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/giantswarm/microerror"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
@@ -57,7 +58,26 @@ func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState inte
 	}
 
 	k8sEndpoint, err := r.k8sClient.CoreV1().Endpoints(endpointToCreate.ServiceNamespace).Get(endpointToCreate.ServiceName, metav1.GetOptions{})
-	if err != nil {
+	if errors.IsNotFound(err) {
+		k8sService, err := r.k8sClient.CoreV1().Services(endpointToCreate.ServiceNamespace).Get(endpointToCreate.ServiceName, metav1.GetOptions{})
+		if err != nil {
+			return microerror.Mask(err)
+		}
+
+		k8sEndpoint = &apiv1.Endpoints{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: endpointToCreate.ServiceName,
+			},
+			Subsets: []apiv1.EndpointSubset{
+				{
+					Ports: serviceToPorts(k8sService),
+				},
+			},
+		}
+	} else if err != nil {
 		return microerror.Mask(err)
 	}
 	for i := range k8sEndpoint.Subsets {
@@ -70,4 +90,19 @@ func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState inte
 	}
 
 	return nil
+}
+
+func serviceToPorts(s *apiv1.Service) []apiv1.EndpointPort {
+	var ports []apiv1.EndpointPort
+
+	for _, p := range s.Spec.Ports {
+		port := apiv1.EndpointPort{
+			Name: p.Name,
+			Port: p.Port,
+		}
+
+		ports = append(ports, port)
+	}
+
+	return ports
 }
