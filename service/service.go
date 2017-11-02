@@ -175,7 +175,6 @@ func New(config Config) (*Service, error) {
 		informerConfig.BackOff = backoff.NewExponentialBackOff()
 		informerConfig.WatcherFactory = newWatcherFactory
 
-		informerConfig.RateWait = time.Second * 10
 		informerConfig.ResyncPeriod = time.Minute * 5
 
 		newInformer, err = informer.New(informerConfig)
