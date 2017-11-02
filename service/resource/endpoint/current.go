@@ -16,13 +16,13 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 		return nil, microerror.Mask(err)
 	}
 
-	r.logger.Log("pod", pod.GetName(), "debug", "looking for annotations")
+	r.logger.Log("pod", pod.GetName(), "debug", "looking for annotations on pod")
 	serviceNamespace := pod.GetNamespace()
 	_, serviceName, err := getAnnotations(*pod, IPAnnotation, ServiceAnnotation)
 	if IsMissingAnnotationError(err) {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
-			r.logger.Log("pod", pod.GetName(), "debug", "canceling reconciliation for pod")
+			r.logger.Log("pod", pod.GetName(), "debug", "canceling reconciliation for pod, no annotations found")
 			return nil, nil
 		}
 	} else if err != nil {

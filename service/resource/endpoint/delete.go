@@ -45,7 +45,6 @@ func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState inte
 	}
 
 	if reflect.DeepEqual(endpointToApply, Endpoint{}) {
-		r.logger.Log("debug", "nothing to delete")
 		return nil
 	}
 
