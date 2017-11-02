@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,6 +42,11 @@ func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState inte
 	endpointToApply, err := toEndpoint(deleteState)
 	if err != nil {
 		return microerror.Mask(err)
+	}
+
+	if reflect.DeepEqual(endpointToApply, Endpoint{}) {
+		r.logger.Log("debug", "nothing to delete")
+		return nil
 	}
 
 	k8sAddresses := []apiv1.EndpointAddress{}
