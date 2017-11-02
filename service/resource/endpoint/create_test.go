@@ -126,8 +126,8 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 				IPs: []string{
 					"1.1.1.1",
 				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
+				ServiceName:      "",
+				ServiceNamespace: "",
 			},
 		},
 		{

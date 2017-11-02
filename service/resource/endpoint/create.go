@@ -21,8 +21,8 @@ func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desire
 	}
 
 	createState := Endpoint{
-		ServiceName:      currentEndpoint.ServiceName,
-		ServiceNamespace: currentEndpoint.ServiceNamespace,
+		ServiceName:      desiredEndpoint.ServiceName,
+		ServiceNamespace: desiredEndpoint.ServiceNamespace,
 	}
 	for _, currentIP := range currentEndpoint.IPs {
 		if !containsIP(createState.IPs, currentIP) {
