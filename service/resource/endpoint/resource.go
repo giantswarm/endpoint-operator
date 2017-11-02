@@ -85,6 +85,21 @@ func removeIP(ips []string, ip string) []string {
 	return ips
 }
 
+func serviceToPorts(s *apiv1.Service) []apiv1.EndpointPort {
+	var ports []apiv1.EndpointPort
+
+	for _, p := range s.Spec.Ports {
+		port := apiv1.EndpointPort{
+			Name: p.Name,
+			Port: p.Port,
+		}
+
+		ports = append(ports, port)
+	}
+
+	return ports
+}
+
 func toEndpoint(v interface{}) (Endpoint, error) {
 	if v == nil {
 		return Endpoint{}, nil

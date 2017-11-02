@@ -91,18 +91,3 @@ func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState inte
 
 	return nil
 }
-
-func serviceToPorts(s *apiv1.Service) []apiv1.EndpointPort {
-	var ports []apiv1.EndpointPort
-
-	for _, p := range s.Spec.Ports {
-		port := apiv1.EndpointPort{
-			Name: p.Name,
-			Port: p.Port,
-		}
-
-		ports = append(ports, port)
-	}
-
-	return ports
-}
