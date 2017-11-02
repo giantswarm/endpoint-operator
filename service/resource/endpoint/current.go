@@ -16,6 +16,7 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 		return nil, microerror.Mask(err)
 	}
 
+	r.logger.Log("pod", pod.GetName(), "debug", "looking for annotations")
 	serviceNamespace := pod.GetNamespace()
 	_, serviceName, err := getAnnotations(*pod, IPAnnotation, ServiceAnnotation)
 	if IsMissingAnnotationError(err) {
