@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: endpoint-operator
+  namespace: giantswarm
+  labels:
+    app: endpoint-operator
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: endpoint-operator
+    spec:
+      volumes:
+      - name: endpoint-operator-configmap
+        configMap:
+          name: endpoint-operator-configmap
+          items:
+          - key: config.yml
+            path: config.yml
+      containers:
+      - name: endpoint-operator
+        image: quay.io/giantswarm/endpoint-operator:[[ .SHA ]]
+        args:
+        - daemon
+        - --config.dirs=/var/run/endpoint-operator/configmap/
+        - --config.files=config
+        volumeMounts:
+        - name: endpoint-operator-configmap
+          mountPath: /var/run/endpoint-operator/configmap/
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 150Mi
+          limits:
+            cpu: 100m
+            memory: 150Mi
+      imagePullSecrets:
+      - name: endpoint-operator-pull-secret
