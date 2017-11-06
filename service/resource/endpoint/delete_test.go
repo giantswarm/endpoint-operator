@@ -395,6 +395,52 @@ func Test_Resource_Endpoint_ProcessDeleteState(t *testing.T) {
 				},
 			},
 		},
+		{
+			DeleteState: Endpoint{
+				IPs:              []string{},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedEndpoints: []*apiv1.Endpoints{},
+			SetupEndpoints: []*apiv1.Endpoints{
+				{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "TestService",
+						Namespace: "TestNamespace",
+					},
+					Subsets: []apiv1.EndpointSubset{
+						{
+							Addresses: []apiv1.EndpointAddress{
+								{
+									IP: "1.2.3.4",
+								},
+							},
+							Ports: []apiv1.EndpointPort{
+								{
+									Port: 1234,
+								},
+							},
+						},
+					},
+				},
+			},
+			SetupService: &apiv1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
+				},
+				Spec: apiv1.ServiceSpec{
+					Ports: []apiv1.ServicePort{
+						{
+							Port: 1234,
+						},
+					},
+				},
+			},
+		},
 	}
 	var err error
 
@@ -427,7 +473,7 @@ func Test_Resource_Endpoint_ProcessDeleteState(t *testing.T) {
 		for _, k8sEndpoint := range tc.ExpectedEndpoints {
 			returnedEndpoint, err := fakeK8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Get(k8sEndpoint.Name, metav1.GetOptions{})
 			if err != nil {
-				t.Fatalf("%d: error returned setting up k8s endpoints: %s\n", i, err)
+				t.Fatalf("%d: error returned setting up k8s endpoints: %s\n", i+1, err)
 			}
 			if !reflect.DeepEqual(k8sEndpoint, returnedEndpoint) {
 				t.Fatalf("case %d expected %#v got %#v", i+1, k8sEndpoint, returnedEndpoint)

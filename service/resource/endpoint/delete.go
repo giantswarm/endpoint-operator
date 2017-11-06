@@ -56,6 +56,14 @@ func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState inte
 		k8sAddresses = append(k8sAddresses, k8sAddress)
 	}
 
+	if len(k8sAddresses) == 0 {
+		err = r.k8sClient.CoreV1().Endpoints(endpointToApply.ServiceNamespace).Delete(endpointToApply.ServiceName, &metav1.DeleteOptions{})
+		if err != nil {
+			return microerror.Mask(err)
+		}
+		return nil
+	}
+
 	k8sEndpoint, err := r.k8sClient.CoreV1().Endpoints(endpointToApply.ServiceNamespace).Get(endpointToApply.ServiceName, metav1.GetOptions{})
 	if err != nil {
 		return microerror.Mask(err)
