@@ -9,15 +9,15 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desiredState interface{}) (Endpoint, error) {
 	currentEndpoint, err := toEndpoint(currentState)
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return Endpoint{}, microerror.Mask(err)
 	}
 
 	desiredEndpoint, err := toEndpoint(desiredState)
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return Endpoint{}, microerror.Mask(err)
 	}
 
 	createState := Endpoint{
@@ -38,7 +38,7 @@ func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desire
 	return createState, nil
 }
 
-func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
+func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	endpointToCreate, err := toEndpoint(createState)
 	if err != nil {
 		return microerror.Mask(err)

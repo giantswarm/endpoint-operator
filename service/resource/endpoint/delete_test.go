@@ -141,7 +141,7 @@ func Test_Resource_Endpoint_GetDeleteState(t *testing.T) {
 		}
 	}
 	for i, tc := range testCases {
-		result, err := newResource.GetDeleteState(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
+		result, err := newResource.newDeleteChange(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}
@@ -466,7 +466,7 @@ func Test_Resource_Endpoint_ProcessDeleteState(t *testing.T) {
 				t.Fatalf("%d: error returned setting up k8s endpoints: %s\n", i, err)
 			}
 		}
-		err := newResource.ProcessDeleteState(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.DeleteState)
+		err := newResource.ApplyDeleteChange(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.DeleteState)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}

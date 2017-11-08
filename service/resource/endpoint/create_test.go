@@ -148,7 +148,7 @@ func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
 		}
 	}
 	for i, tc := range testCases {
-		result, err := newResource.GetCreateState(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
+		result, err := newResource.newCreateChange(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}
@@ -427,7 +427,7 @@ func Test_Resource_Endpoint_ProcessCreateState(t *testing.T) {
 				t.Fatalf("%d: error returned setting up k8s endpoints: %s\n", i, err)
 			}
 		}
-		err := newResource.ProcessCreateState(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.CreateState)
+		err := newResource.ApplyCreateChange(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.CreateState)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}
