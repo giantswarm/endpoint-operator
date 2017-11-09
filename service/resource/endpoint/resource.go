@@ -6,6 +6,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/operatorkit/framework"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -64,6 +65,42 @@ func containsIP(ips []string, ip string) bool {
 	return false
 }
 
+func constructK8sEndpoint(endpoint Endpoint, k8sClient kubernetes.Interface) (*apiv1.Endpoints, error) {
+	k8sAddresses := []apiv1.EndpointAddress{}
+	for _, endpointIP := range endpoint.IPs {
+		k8sAddress := apiv1.EndpointAddress{
+			IP: endpointIP,
+		}
+		k8sAddresses = append(k8sAddresses, k8sAddress)
+	}
+
+	k8sService, err := k8sClient.CoreV1().Services(endpoint.ServiceNamespace).Get(endpoint.ServiceName, metav1.GetOptions{})
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	k8sEndpoint := &apiv1.Endpoints{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      endpoint.ServiceName,
+			Namespace: endpoint.ServiceNamespace,
+		},
+		Subsets: []apiv1.EndpointSubset{
+			{
+				Ports: serviceToPorts(k8sService),
+			},
+		},
+	}
+
+	for i := range k8sEndpoint.Subsets {
+		k8sEndpoint.Subsets[i].Addresses = k8sAddresses
+	}
+
+	return k8sEndpoint, nil
+}
+
 func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationName string) (ipAnnotationValue string, serviceAnnotationValue string, err error) {
 	ipAnnotationValue, ok := pod.GetAnnotations()[ipAnnotationName]
 	if !ok {
@@ -109,6 +146,17 @@ func toEndpoint(v interface{}) (Endpoint, error) {
 		return Endpoint{}, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", Endpoint{}, v)
 	}
 	return endpoint, nil
+}
+
+func toK8sEndpoint(v interface{}) (*apiv1.Endpoints, error) {
+	if v == nil {
+		return nil, nil
+	}
+	k8sEndpoint, ok := v.(*apiv1.Endpoints)
+	if !ok {
+		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &apiv1.Endpoints{}, v)
+	}
+	return k8sEndpoint, nil
 }
 
 func toPod(v interface{}) (*apiv1.Pod, error) {

@@ -14,45 +14,26 @@ import (
 
 func Test_Resource_Endpoint_ApplyDeleteChange(t *testing.T) {
 	testCases := []struct {
-		DeleteState       interface{}
+		DeleteState       *apiv1.Endpoints
 		ExpectedEndpoints []*apiv1.Endpoints
 		SetupEndpoints    []*apiv1.Endpoints
-		SetupService      *apiv1.Service
-		Obj               interface{}
 	}{
 		{
-			DeleteState: Endpoint{
-				IPs: []string{
-					"1.2.3.4",
-					"1.1.1.1",
+			DeleteState: &apiv1.Endpoints{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
 				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-
-			ExpectedEndpoints: []*apiv1.Endpoints{
-				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "TestService",
-						Namespace: "TestNamespace",
-					},
-					Subsets: []apiv1.EndpointSubset{
-						{
-							Addresses: []apiv1.EndpointAddress{
-								{
-									IP: "1.2.3.4",
-								},
-								{
-									IP: "1.1.1.1",
-								},
-							},
-						},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
+				},
+				Subsets: []apiv1.EndpointSubset{
+					{
+						Addresses: []apiv1.EndpointAddress{},
 					},
 				},
 			},
+			ExpectedEndpoints: nil,
 			SetupEndpoints: []*apiv1.Endpoints{
 				{
 					TypeMeta: metav1.TypeMeta{
@@ -69,234 +50,6 @@ func Test_Resource_Endpoint_ApplyDeleteChange(t *testing.T) {
 									IP: "1.2.3.4",
 								},
 							},
-						},
-					},
-				},
-			},
-			SetupService: &apiv1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestService",
-					Namespace: "TestNamespace",
-				},
-				Spec: apiv1.ServiceSpec{
-					Ports: []apiv1.ServicePort{
-						{
-							Port: 1234,
-						},
-					},
-				},
-			},
-		},
-		{
-			DeleteState: Endpoint{
-				IPs: []string{
-					"1.2.3.4",
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedEndpoints: []*apiv1.Endpoints{
-				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "TestService",
-						Namespace: "TestNamespace",
-					},
-					Subsets: []apiv1.EndpointSubset{
-						{
-							Addresses: []apiv1.EndpointAddress{
-								{
-									IP: "1.2.3.4",
-								},
-								{
-									IP: "1.1.1.1",
-								},
-							},
-						},
-						{
-							Addresses: []apiv1.EndpointAddress{
-								{
-									IP: "1.2.3.4",
-								},
-								{
-									IP: "1.1.1.1",
-								},
-							},
-						},
-					},
-				},
-			},
-			SetupEndpoints: []*apiv1.Endpoints{
-				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "TestService",
-						Namespace: "TestNamespace",
-					},
-					Subsets: []apiv1.EndpointSubset{
-						{
-							Addresses: []apiv1.EndpointAddress{
-								{
-									IP: "1.2.3.4",
-								},
-							},
-						},
-						{
-							Addresses: []apiv1.EndpointAddress{
-								{
-									IP: "1.2.3.4",
-								},
-							},
-						},
-					},
-				},
-			},
-			SetupService: &apiv1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestService",
-					Namespace: "TestNamespace",
-				},
-				Spec: apiv1.ServiceSpec{
-					Ports: []apiv1.ServicePort{
-						{
-							Port: 1234,
-						},
-						{
-							Port: 5678,
-						},
-					},
-				},
-			},
-		},
-		{
-			DeleteState: Endpoint{
-				IPs: []string{
-					"1.2.3.4",
-					"5.6.7.8",
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedEndpoints: []*apiv1.Endpoints{
-				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "TestService",
-						Namespace: "TestNamespace",
-					},
-					Subsets: []apiv1.EndpointSubset{
-						{
-							Addresses: []apiv1.EndpointAddress{
-								{
-									IP: "1.2.3.4",
-								},
-								{
-									IP: "5.6.7.8",
-								},
-								{
-									IP: "1.1.1.1",
-								},
-							},
-							Ports: []apiv1.EndpointPort{
-								{
-									Port: 1234,
-								},
-							},
-						},
-					},
-				},
-			},
-			SetupEndpoints: []*apiv1.Endpoints{
-				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "TestService",
-						Namespace: "TestNamespace",
-					},
-					Subsets: []apiv1.EndpointSubset{
-						{
-							Addresses: []apiv1.EndpointAddress{
-								{
-									IP: "1.2.3.4",
-								},
-								{
-									IP: "5.6.7.8",
-								},
-							},
-							Ports: []apiv1.EndpointPort{
-								{
-									Port: 1234,
-								},
-							},
-						},
-					},
-				},
-			},
-			SetupService: &apiv1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestService",
-					Namespace: "TestNamespace",
-				},
-				Spec: apiv1.ServiceSpec{
-					Ports: []apiv1.ServicePort{
-						{
-							Port: 1234,
-						},
-					},
-				},
-			},
-		},
-		{
-			DeleteState: Endpoint{
-				IPs:              []string{},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedEndpoints: []*apiv1.Endpoints{},
-			SetupEndpoints: []*apiv1.Endpoints{
-				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "TestService",
-						Namespace: "TestNamespace",
-					},
-					Subsets: []apiv1.EndpointSubset{
-						{
-							Addresses: []apiv1.EndpointAddress{
-								{
-									IP: "1.2.3.4",
-								},
-							},
-							Ports: []apiv1.EndpointPort{
-								{
-									Port: 1234,
-								},
-							},
-						},
-					},
-				},
-			},
-			SetupService: &apiv1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestService",
-					Namespace: "TestNamespace",
-				},
-				Spec: apiv1.ServiceSpec{
-					Ports: []apiv1.ServicePort{
-						{
-							Port: 1234,
 						},
 					},
 				},
@@ -317,17 +70,12 @@ func Test_Resource_Endpoint_ApplyDeleteChange(t *testing.T) {
 				t.Fatal("expected", nil, "got", err)
 			}
 		}
-		if tc.SetupService != nil {
-			if _, err := fakeK8sClient.CoreV1().Services(tc.SetupService.Namespace).Create(tc.SetupService); err != nil {
-				t.Fatalf("%d: error returned setting up k8s service: %s\n", i, err)
-			}
-		}
 		for _, k8sEndpoint := range tc.SetupEndpoints {
 			if _, err := fakeK8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Create(k8sEndpoint); err != nil {
 				t.Fatalf("%d: error returned setting up k8s endpoints: %s\n", i, err)
 			}
 		}
-		err := newResource.ApplyDeleteChange(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.DeleteState)
+		err := newResource.ApplyDeleteChange(canceledcontext.NewContext(context.TODO(), make(chan struct{})), nil, tc.DeleteState)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}

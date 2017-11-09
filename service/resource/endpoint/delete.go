@@ -2,49 +2,19 @@ package endpoint
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/framework"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
-	endpointToApply, err := toEndpoint(deleteState)
+	k8sEndpoint, err := toK8sEndpoint(deleteState)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	if reflect.DeepEqual(endpointToApply, Endpoint{}) {
-		return nil
-	}
-
-	k8sAddresses := []apiv1.EndpointAddress{}
-	for _, endpointIP := range endpointToApply.IPs {
-		k8sAddress := apiv1.EndpointAddress{
-			IP: endpointIP,
-		}
-		k8sAddresses = append(k8sAddresses, k8sAddress)
-	}
-
-	if len(k8sAddresses) == 0 {
-		err = r.k8sClient.CoreV1().Endpoints(endpointToApply.ServiceNamespace).Delete(endpointToApply.ServiceName, &metav1.DeleteOptions{})
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		return nil
-	}
-
-	k8sEndpoint, err := r.k8sClient.CoreV1().Endpoints(endpointToApply.ServiceNamespace).Get(endpointToApply.ServiceName, metav1.GetOptions{})
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	for i := range k8sEndpoint.Subsets {
-		k8sEndpoint.Subsets[i].Addresses = k8sAddresses
-	}
-
-	_, err = r.k8sClient.CoreV1().Endpoints(endpointToApply.ServiceNamespace).Update(k8sEndpoint)
+	err = r.k8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Delete(k8sEndpoint.Name, &metav1.DeleteOptions{})
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -53,26 +23,35 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState inter
 }
 
 func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	delete, err := r.newDeleteChange(ctx, obj, currentState, desiredState)
+	endpoint, err := r.newDeleteChange(ctx, obj, currentState, desiredState)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	k8sEndpoint, err := constructK8sEndpoint(endpoint, r.k8sClient)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
 	patch := framework.NewPatch()
-	patch.SetDeleteChange(delete)
+	if len(endpoint.IPs) == 0 {
+		patch.SetDeleteChange(k8sEndpoint)
+	} else {
+		patch.SetUpdateChange(k8sEndpoint)
+	}
 
 	return patch, nil
 }
 
-func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desiredState interface{}) (Endpoint, error) {
 	currentEndpoint, err := toEndpoint(currentState)
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return Endpoint{}, microerror.Mask(err)
 	}
 
 	desiredEndpoint, err := toEndpoint(desiredState)
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return Endpoint{}, microerror.Mask(err)
 	}
 
 	deleteState := Endpoint{
