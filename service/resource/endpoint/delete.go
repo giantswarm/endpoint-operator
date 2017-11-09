@@ -5,40 +5,12 @@ import (
 	"reflect"
 
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/operatorkit/framework"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (r *Resource) GetDeleteState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	currentEndpoint, err := toEndpoint(currentState)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	desiredEndpoint, err := toEndpoint(desiredState)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	deleteState := Endpoint{
-		ServiceName:      currentEndpoint.ServiceName,
-		ServiceNamespace: currentEndpoint.ServiceNamespace,
-	}
-	for _, currentIP := range currentEndpoint.IPs {
-		if !containsIP(deleteState.IPs, currentIP) {
-			deleteState.IPs = append(deleteState.IPs, currentIP)
-		}
-	}
-	for _, desiredIP := range desiredEndpoint.IPs {
-		if containsIP(deleteState.IPs, desiredIP) {
-			deleteState.IPs = removeIP(deleteState.IPs, desiredIP)
-		}
-	}
-
-	return deleteState, nil
-}
-
-func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState interface{}) error {
+func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
 	endpointToApply, err := toEndpoint(deleteState)
 	if err != nil {
 		return microerror.Mask(err)
@@ -78,4 +50,45 @@ func (r *Resource) ProcessDeleteState(ctx context.Context, obj, deleteState inte
 	}
 
 	return nil
+}
+
+func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
+	delete, err := r.newDeleteChange(ctx, obj, currentState, desiredState)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	patch := framework.NewPatch()
+	patch.SetDeleteChange(delete)
+
+	return patch, nil
+}
+
+func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+	currentEndpoint, err := toEndpoint(currentState)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	desiredEndpoint, err := toEndpoint(desiredState)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	deleteState := Endpoint{
+		ServiceName:      currentEndpoint.ServiceName,
+		ServiceNamespace: currentEndpoint.ServiceNamespace,
+	}
+	for _, currentIP := range currentEndpoint.IPs {
+		if !containsIP(deleteState.IPs, currentIP) {
+			deleteState.IPs = append(deleteState.IPs, currentIP)
+		}
+	}
+	for _, desiredIP := range desiredEndpoint.IPs {
+		if containsIP(deleteState.IPs, desiredIP) {
+			deleteState.IPs = removeIP(deleteState.IPs, desiredIP)
+		}
+	}
+
+	return deleteState, nil
 }

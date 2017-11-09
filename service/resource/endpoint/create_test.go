@@ -12,153 +12,7 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func Test_Resource_Endpoint_GetCreateState(t *testing.T) {
-	testCases := []struct {
-		CurrentState        interface{}
-		DesiredState        interface{}
-		ExpectedCreateState interface{}
-		Obj                 interface{}
-	}{
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"5.5.5.5",
-					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"5.5.5.5",
-					"1.2.3.4",
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState: Endpoint{
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: nil,
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "",
-				ServiceNamespace: "",
-			},
-		},
-		{
-			CurrentState:        nil,
-			DesiredState:        nil,
-			ExpectedCreateState: Endpoint{},
-		},
-	}
-	var err error
-	var newResource *Resource
-	{
-		resourceConfig := DefaultConfig()
-		resourceConfig.K8sClient = fake.NewSimpleClientset()
-		resourceConfig.Logger = microloggertest.New()
-		newResource, err = New(resourceConfig)
-		if err != nil {
-			t.Fatal("expected", nil, "got", err)
-		}
-	}
-	for i, tc := range testCases {
-		result, err := newResource.GetCreateState(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
-		if err != nil {
-			t.Fatal("case", i+1, "expected", nil, "got", err)
-		}
-		if !reflect.DeepEqual(tc.ExpectedCreateState, result) {
-			t.Fatalf("case %d expected %#v got %#v", i+1, tc.ExpectedCreateState, result)
-		}
-	}
-}
-
-func Test_Resource_Endpoint_ProcessCreateState(t *testing.T) {
+func Test_Resource_Endpoint_ApplyCreateChange(t *testing.T) {
 	testCases := []struct {
 		CreateState       interface{}
 		ExpectedEndpoints []*apiv1.Endpoints
@@ -427,7 +281,7 @@ func Test_Resource_Endpoint_ProcessCreateState(t *testing.T) {
 				t.Fatalf("%d: error returned setting up k8s endpoints: %s\n", i, err)
 			}
 		}
-		err := newResource.ProcessCreateState(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.CreateState)
+		err := newResource.ApplyCreateChange(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.CreateState)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}
@@ -439,6 +293,152 @@ func Test_Resource_Endpoint_ProcessCreateState(t *testing.T) {
 			if !reflect.DeepEqual(k8sEndpoint, returnedEndpoint) {
 				t.Fatalf("case %d expected %#v got %#v", i+1, k8sEndpoint, returnedEndpoint)
 			}
+		}
+	}
+}
+
+func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
+	testCases := []struct {
+		CurrentState        interface{}
+		DesiredState        interface{}
+		ExpectedCreateState interface{}
+		Obj                 interface{}
+	}{
+		{
+			CurrentState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedCreateState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+					"1.2.3.4",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedCreateState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+					"1.2.3.4",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState: Endpoint{
+				IPs: []string{
+					"5.5.5.5",
+					"1.2.3.4",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedCreateState: Endpoint{
+				IPs: []string{
+					"5.5.5.5",
+					"1.2.3.4",
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState: Endpoint{
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedCreateState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: nil,
+			ExpectedCreateState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "",
+				ServiceNamespace: "",
+			},
+		},
+		{
+			CurrentState:        nil,
+			DesiredState:        nil,
+			ExpectedCreateState: Endpoint{},
+		},
+	}
+	var err error
+	var newResource *Resource
+	{
+		resourceConfig := DefaultConfig()
+		resourceConfig.K8sClient = fake.NewSimpleClientset()
+		resourceConfig.Logger = microloggertest.New()
+		newResource, err = New(resourceConfig)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+	}
+	for i, tc := range testCases {
+		result, err := newResource.newCreateChange(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
+		if err != nil {
+			t.Fatal("case", i+1, "expected", nil, "got", err)
+		}
+		if !reflect.DeepEqual(tc.ExpectedCreateState, result) {
+			t.Fatalf("case %d expected %#v got %#v", i+1, tc.ExpectedCreateState, result)
 		}
 	}
 }

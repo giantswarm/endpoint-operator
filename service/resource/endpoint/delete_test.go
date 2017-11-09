@@ -12,146 +12,7 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func Test_Resource_Endpoint_GetDeleteState(t *testing.T) {
-	testCases := []struct {
-		CurrentState        interface{}
-		DesiredState        interface{}
-		ExpectedDeleteState interface{}
-		Obj                 interface{}
-	}{
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedDeleteState: Endpoint{
-				IPs:              []string{},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedDeleteState: Endpoint{
-				IPs: []string{
-					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"5.5.5.5",
-					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedDeleteState: Endpoint{
-				IPs: []string{
-					"5.5.5.5",
-					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState: Endpoint{
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			ExpectedDeleteState: Endpoint{
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: nil,
-			ExpectedDeleteState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-		},
-		{
-			CurrentState:        nil,
-			DesiredState:        nil,
-			ExpectedDeleteState: Endpoint{},
-		},
-	}
-	var err error
-	var newResource *Resource
-	{
-		resourceConfig := DefaultConfig()
-		resourceConfig.K8sClient = fake.NewSimpleClientset()
-		resourceConfig.Logger = microloggertest.New()
-		newResource, err = New(resourceConfig)
-		if err != nil {
-			t.Fatal("expected", nil, "got", err)
-		}
-	}
-	for i, tc := range testCases {
-		result, err := newResource.GetDeleteState(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
-		if err != nil {
-			t.Fatal("case", i+1, "expected", nil, "got", err)
-		}
-		if !reflect.DeepEqual(tc.ExpectedDeleteState, result) {
-			t.Fatalf("case %d expected %#v got %#v", i+1, tc.ExpectedDeleteState, result)
-		}
-	}
-}
-
-func Test_Resource_Endpoint_ProcessDeleteState(t *testing.T) {
+func Test_Resource_Endpoint_ApplyDeleteChange(t *testing.T) {
 	testCases := []struct {
 		DeleteState       interface{}
 		ExpectedEndpoints []*apiv1.Endpoints
@@ -466,7 +327,7 @@ func Test_Resource_Endpoint_ProcessDeleteState(t *testing.T) {
 				t.Fatalf("%d: error returned setting up k8s endpoints: %s\n", i, err)
 			}
 		}
-		err := newResource.ProcessDeleteState(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.DeleteState)
+		err := newResource.ApplyDeleteChange(canceledcontext.NewContext(context.TODO(), make(chan struct{})), tc.Obj, tc.DeleteState)
 		if err != nil {
 			t.Fatal("case", i+1, "expected", nil, "got", err)
 		}
@@ -478,6 +339,145 @@ func Test_Resource_Endpoint_ProcessDeleteState(t *testing.T) {
 			if !reflect.DeepEqual(k8sEndpoint, returnedEndpoint) {
 				t.Fatalf("case %d expected %#v got %#v", i+1, k8sEndpoint, returnedEndpoint)
 			}
+		}
+	}
+}
+
+func Test_Resource_Endpoint_newDeleteChange(t *testing.T) {
+	testCases := []struct {
+		CurrentState        interface{}
+		DesiredState        interface{}
+		ExpectedDeleteState interface{}
+		Obj                 interface{}
+	}{
+		{
+			CurrentState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedDeleteState: Endpoint{
+				IPs:              []string{},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+					"1.2.3.4",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedDeleteState: Endpoint{
+				IPs: []string{
+					"1.2.3.4",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState: Endpoint{
+				IPs: []string{
+					"5.5.5.5",
+					"1.2.3.4",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedDeleteState: Endpoint{
+				IPs: []string{
+					"5.5.5.5",
+					"1.2.3.4",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState: Endpoint{
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			ExpectedDeleteState: Endpoint{
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			DesiredState: nil,
+			ExpectedDeleteState: Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+		},
+		{
+			CurrentState:        nil,
+			DesiredState:        nil,
+			ExpectedDeleteState: Endpoint{},
+		},
+	}
+	var err error
+	var newResource *Resource
+	{
+		resourceConfig := DefaultConfig()
+		resourceConfig.K8sClient = fake.NewSimpleClientset()
+		resourceConfig.Logger = microloggertest.New()
+		newResource, err = New(resourceConfig)
+		if err != nil {
+			t.Fatal("expected", nil, "got", err)
+		}
+	}
+	for i, tc := range testCases {
+		result, err := newResource.newDeleteChange(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
+		if err != nil {
+			t.Fatal("case", i+1, "expected", nil, "got", err)
+		}
+		if !reflect.DeepEqual(tc.ExpectedDeleteState, result) {
+			t.Fatalf("case %d expected %#v got %#v", i+1, tc.ExpectedDeleteState, result)
 		}
 	}
 }

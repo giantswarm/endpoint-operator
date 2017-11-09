@@ -9,36 +9,7 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (r *Resource) GetCreateState(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
-	currentEndpoint, err := toEndpoint(currentState)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	desiredEndpoint, err := toEndpoint(desiredState)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	createState := Endpoint{
-		ServiceName:      desiredEndpoint.ServiceName,
-		ServiceNamespace: desiredEndpoint.ServiceNamespace,
-	}
-	for _, currentIP := range currentEndpoint.IPs {
-		if !containsIP(createState.IPs, currentIP) {
-			createState.IPs = append(createState.IPs, currentIP)
-		}
-	}
-	for _, desiredIP := range desiredEndpoint.IPs {
-		if !containsIP(createState.IPs, desiredIP) {
-			createState.IPs = append(createState.IPs, desiredIP)
-		}
-	}
-
-	return createState, nil
-}
-
-func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState interface{}) error {
+func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
 	endpointToCreate, err := toEndpoint(createState)
 	if err != nil {
 		return microerror.Mask(err)
@@ -90,4 +61,33 @@ func (r *Resource) ProcessCreateState(ctx context.Context, obj, createState inte
 	}
 
 	return nil
+}
+
+func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+	currentEndpoint, err := toEndpoint(currentState)
+	if err != nil {
+		return Endpoint{}, microerror.Mask(err)
+	}
+
+	desiredEndpoint, err := toEndpoint(desiredState)
+	if err != nil {
+		return Endpoint{}, microerror.Mask(err)
+	}
+
+	createState := Endpoint{
+		ServiceName:      desiredEndpoint.ServiceName,
+		ServiceNamespace: desiredEndpoint.ServiceNamespace,
+	}
+	for _, currentIP := range currentEndpoint.IPs {
+		if !containsIP(createState.IPs, currentIP) {
+			createState.IPs = append(createState.IPs, currentIP)
+		}
+	}
+	for _, desiredIP := range desiredEndpoint.IPs {
+		if !containsIP(createState.IPs, desiredIP) {
+			createState.IPs = append(createState.IPs, desiredIP)
+		}
+	}
+
+	return createState, nil
 }
