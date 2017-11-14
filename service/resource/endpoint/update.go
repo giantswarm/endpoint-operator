@@ -30,10 +30,6 @@ func (r *Resource) NewUpdatePatch(ctx context.Context, obj, currentState, desire
 		return nil, microerror.Mask(err)
 	}
 
-	if k8sEndpoint == nil {
-		return nil, nil
-	}
-
 	patch := framework.NewPatch()
 
 	_, err = r.k8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Get(k8sEndpoint.Name, metav1.GetOptions{})
