@@ -101,6 +101,7 @@ func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 		DesiredState        interface{}
 		ExpectedCreateState interface{}
 		Obj                 interface{}
+		SetupService        *apiv1.Service
 	}{
 		{
 			CurrentState: Endpoint{
@@ -117,12 +118,41 @@ func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
+			SetupService: &apiv1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
 				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
+				Spec: apiv1.ServiceSpec{
+					Ports: []apiv1.ServicePort{
+						{
+							Port: 1234,
+						},
+					},
+				},
+			},
+			ExpectedCreateState: &apiv1.Endpoints{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
+				},
+				Subsets: []apiv1.EndpointSubset{
+					{
+						Ports: []apiv1.EndpointPort{
+							{
+								Port: 1234,
+							},
+						},
+						Addresses: []apiv1.EndpointAddress{
+							{
+								IP: "1.1.1.1",
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -141,13 +171,44 @@ func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-					"1.2.3.4",
+			SetupService: &apiv1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
 				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
+				Spec: apiv1.ServiceSpec{
+					Ports: []apiv1.ServicePort{
+						{
+							Port: 1234,
+						},
+					},
+				},
+			},
+			ExpectedCreateState: &apiv1.Endpoints{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
+				},
+				Subsets: []apiv1.EndpointSubset{
+					{
+						Ports: []apiv1.EndpointPort{
+							{
+								Port: 1234,
+							},
+						},
+						Addresses: []apiv1.EndpointAddress{
+							{
+								IP: "1.1.1.1",
+							},
+							{
+								IP: "1.2.3.4",
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -166,14 +227,47 @@ func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"5.5.5.5",
-					"1.2.3.4",
-					"1.1.1.1",
+			SetupService: &apiv1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
 				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
+				Spec: apiv1.ServiceSpec{
+					Ports: []apiv1.ServicePort{
+						{
+							Port: 1234,
+						},
+					},
+				},
+			},
+			ExpectedCreateState: &apiv1.Endpoints{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
+				},
+				Subsets: []apiv1.EndpointSubset{
+					{
+						Ports: []apiv1.EndpointPort{
+							{
+								Port: 1234,
+							},
+						},
+						Addresses: []apiv1.EndpointAddress{
+							{
+								IP: "5.5.5.5",
+							},
+							{
+								IP: "1.2.3.4",
+							},
+							{
+								IP: "1.1.1.1",
+							},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -188,55 +282,74 @@ func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
+			SetupService: &apiv1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
 				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
+				Spec: apiv1.ServiceSpec{
+					Ports: []apiv1.ServicePort{
+						{
+							Port: 1234,
+						},
+					},
+				},
 			},
-		},
-		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
+			ExpectedCreateState: &apiv1.Endpoints{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
 				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: nil,
-			ExpectedCreateState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
 				},
-				ServiceName:      "",
-				ServiceNamespace: "",
+				Subsets: []apiv1.EndpointSubset{
+					{
+						Ports: []apiv1.EndpointPort{
+							{
+								Port: 1234,
+							},
+						},
+						Addresses: []apiv1.EndpointAddress{
+							{
+								IP: "1.1.1.1",
+							},
+						},
+					},
+				},
 			},
 		},
 		{
 			CurrentState:        nil,
 			DesiredState:        nil,
-			ExpectedCreateState: Endpoint{},
+			ExpectedCreateState: (*apiv1.Endpoints)(nil),
 		},
 	}
-	var err error
-	var newResource *Resource
-	{
-		resourceConfig := DefaultConfig()
-		resourceConfig.K8sClient = fake.NewSimpleClientset()
-		resourceConfig.Logger = microloggertest.New()
-		newResource, err = New(resourceConfig)
-		if err != nil {
-			t.Fatal("expected", nil, "got", err)
-		}
-	}
 	for i, tc := range testCases {
+		var err error
+		var newResource *Resource
+		{
+			resourceConfig := DefaultConfig()
+			resourceConfig.K8sClient = fake.NewSimpleClientset()
+			resourceConfig.Logger = microloggertest.New()
+			newResource, err = New(resourceConfig)
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
+		}
+
+		if tc.SetupService != nil {
+			if _, err := newResource.k8sClient.CoreV1().Services(tc.SetupService.Namespace).Create(tc.SetupService); err != nil {
+				t.Fatalf("%d: error returned setting up k8s service: %s\n", i, err)
+			}
+		}
+
 		result, err := newResource.newCreateChange(context.TODO(), tc.Obj, tc.CurrentState, tc.DesiredState)
 		if err != nil {
-			t.Fatal("case", i+1, "expected", nil, "got", err)
+			t.Fatal("case", i, "expected", nil, "got", err)
 		}
 		if !reflect.DeepEqual(tc.ExpectedCreateState, result) {
-			t.Fatalf("case %d expected %#v got %#v", i+1, tc.ExpectedCreateState, result)
+			t.Fatalf("case %d expected %#v got %#v", i, tc.ExpectedCreateState, result)
 		}
 	}
 }

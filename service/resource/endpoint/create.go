@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/giantswarm/microerror"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
@@ -20,15 +21,15 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState inter
 	return nil
 }
 
-func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desiredState interface{}) (Endpoint, error) {
+func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desiredState interface{}) (*apiv1.Endpoints, error) {
 	currentEndpoint, err := toEndpoint(currentState)
 	if err != nil {
-		return Endpoint{}, microerror.Mask(err)
+		return nil, microerror.Mask(err)
 	}
 
 	desiredEndpoint, err := toEndpoint(desiredState)
 	if err != nil {
-		return Endpoint{}, microerror.Mask(err)
+		return nil, microerror.Mask(err)
 	}
 
 	createState := Endpoint{
@@ -46,5 +47,15 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 		}
 	}
 
-	return createState, nil
+	if len(createState.IPs) == 0 {
+		// Nothing to do.
+		return nil, nil
+	}
+
+	k8sEndpoint, err := newK8sEndpoint(createState, r.k8sClient)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return k8sEndpoint, nil
 }

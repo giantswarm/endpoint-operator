@@ -25,19 +25,13 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState inter
 }
 
 func (r *Resource) NewUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	endpoint, err := r.newCreateChange(ctx, obj, currentState, desiredState)
+	k8sEndpoint, err := r.newCreateChange(ctx, obj, currentState, desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	if len(endpoint.IPs) == 0 {
-		// Nothing to do.
+	if k8sEndpoint == nil {
 		return nil, nil
-	}
-
-	k8sEndpoint, err := constructK8sEndpoint(endpoint, r.k8sClient)
-	if err != nil {
-		return nil, microerror.Mask(err)
 	}
 
 	patch := framework.NewPatch()

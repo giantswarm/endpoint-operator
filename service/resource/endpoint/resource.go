@@ -65,7 +65,28 @@ func containsIP(ips []string, ip string) bool {
 	return false
 }
 
-func constructK8sEndpoint(endpoint Endpoint, k8sClient kubernetes.Interface) (*apiv1.Endpoints, error) {
+func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationName string) (ipAnnotationValue string, serviceAnnotationValue string, err error) {
+	ipAnnotationValue, ok := pod.GetAnnotations()[ipAnnotationName]
+	if !ok {
+		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", ipAnnotationName)
+	}
+	serviceAnnotationValue, ok = pod.GetAnnotations()[serviceAnnotationName]
+	if !ok {
+		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", serviceAnnotationName)
+	}
+	return ipAnnotationValue, serviceAnnotationValue, nil
+}
+
+func isEmptyEndpoint(endpoint apiv1.Endpoints) bool {
+	for _, subset := range endpoint.Subsets {
+		if len(subset.Addresses) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func newK8sEndpoint(endpoint Endpoint, k8sClient kubernetes.Interface) (*apiv1.Endpoints, error) {
 	k8sAddresses := []apiv1.EndpointAddress{}
 	for _, endpointIP := range endpoint.IPs {
 		k8sAddress := apiv1.EndpointAddress{
@@ -99,18 +120,6 @@ func constructK8sEndpoint(endpoint Endpoint, k8sClient kubernetes.Interface) (*a
 	}
 
 	return k8sEndpoint, nil
-}
-
-func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationName string) (ipAnnotationValue string, serviceAnnotationValue string, err error) {
-	ipAnnotationValue, ok := pod.GetAnnotations()[ipAnnotationName]
-	if !ok {
-		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", ipAnnotationName)
-	}
-	serviceAnnotationValue, ok = pod.GetAnnotations()[serviceAnnotationName]
-	if !ok {
-		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", serviceAnnotationName)
-	}
-	return ipAnnotationValue, serviceAnnotationValue, nil
 }
 
 func removeIP(ips []string, ip string) []string {
