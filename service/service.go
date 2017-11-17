@@ -22,7 +22,6 @@ import (
 
 	"github.com/giantswarm/endpoint-operator/flag"
 	"github.com/giantswarm/endpoint-operator/service/healthz"
-	"github.com/giantswarm/endpoint-operator/service/operator"
 	endpointresource "github.com/giantswarm/endpoint-operator/service/resource/endpoint"
 )
 
@@ -55,9 +54,9 @@ func DefaultConfig() Config {
 }
 
 type Service struct {
-	Healthz  *healthz.Service
-	Operator *operator.Operator
-	Version  *version.Service
+	Framework *framework.Framework
+	Healthz   *healthz.Service
+	Version   *version.Service
 
 	bootOnce sync.Once
 }
@@ -88,25 +87,6 @@ func New(config Config) (*Service, error) {
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
-	}
-
-	var newHealthzService *healthz.Service
-	{
-		healthzConfig := healthz.DefaultConfig()
-
-		healthzConfig.K8sClient = newK8sClient
-		healthzConfig.Logger = config.Logger
-
-		newHealthzService, err = healthz.New(healthzConfig)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-	}
-
-	var newOperatorBackOff *backoff.ExponentialBackOff
-	{
-		newOperatorBackOff = backoff.NewExponentialBackOff()
-		newOperatorBackOff.MaxElapsedTime = 5 * time.Minute
 	}
 
 	var newEndpointResource framework.Resource
@@ -152,9 +132,9 @@ func New(config Config) (*Service, error) {
 			return nil, microerror.Mask(err)
 		}
 	}
+
 	var newWatcherFactory informer.WatcherFactory
 	{
-
 		zeroObjectFactory := &informer.ZeroObjectFactoryFuncs{
 			NewObjectFunc: func() runtime.Object {
 				var pod apiv1.Pod
@@ -172,7 +152,6 @@ func New(config Config) (*Service, error) {
 	{
 		informerConfig := informer.DefaultConfig()
 
-		informerConfig.BackOff = backoff.NewExponentialBackOff()
 		informerConfig.WatcherFactory = newWatcherFactory
 
 		informerConfig.ResyncPeriod = time.Minute * 5
@@ -183,36 +162,29 @@ func New(config Config) (*Service, error) {
 		}
 	}
 
-	var newOperatorFramework *framework.Framework
+	var operatorFramework *framework.Framework
 	{
-		frameworkConfig := framework.DefaultConfig()
+		c := framework.DefaultConfig()
 
-		newFrameworkBackOff := backoff.NewExponentialBackOff()
-		newFrameworkBackOff.MaxElapsedTime = 5 * time.Minute
+		c.BackOffFactory = framework.DefaultBackOffFactory()
+		c.Informer = newInformer
+		c.Logger = config.Logger
+		c.ResourceRouter = framework.DefaultResourceRouter(resources)
 
-		frameworkConfig.BackOff = newFrameworkBackOff
-		frameworkConfig.Logger = config.Logger
-		frameworkConfig.Resources = resources
-
-		newOperatorFramework, err = framework.New(frameworkConfig)
+		operatorFramework, err = framework.New(c)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 	}
 
-	var newOperator *operator.Operator
+	var newHealthzService *healthz.Service
 	{
-		operatorConfig := operator.DefaultConfig()
+		healthzConfig := healthz.DefaultConfig()
 
-		operatorConfig.BackOff = newOperatorBackOff
-		operatorConfig.Framework = newOperatorFramework
-		operatorConfig.Informer = newInformer
-		operatorConfig.K8sClient = newK8sClient
-		operatorConfig.Logger = config.Logger
+		healthzConfig.K8sClient = newK8sClient
+		healthzConfig.Logger = config.Logger
 
-		operatorConfig.ResyncPeriod = time.Minute * 5
-
-		newOperator, err = operator.New(operatorConfig)
+		newHealthzService, err = healthz.New(healthzConfig)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -234,9 +206,9 @@ func New(config Config) (*Service, error) {
 	}
 
 	newService := &Service{
-		Healthz:  newHealthzService,
-		Operator: newOperator,
-		Version:  newVersionService,
+		Framework: operatorFramework,
+		Healthz:   newHealthzService,
+		Version:   newVersionService,
 
 		bootOnce: sync.Once{},
 	}
@@ -246,6 +218,6 @@ func New(config Config) (*Service, error) {
 
 func (s *Service) Boot() {
 	s.bootOnce.Do(func() {
-		s.Operator.Boot()
+		s.Framework.Boot()
 	})
 }

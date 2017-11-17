@@ -2,6 +2,7 @@ package versionbundle
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/coreos/go-semver/semver"
@@ -19,13 +20,12 @@ func DefaultReleaseConfig() ReleaseConfig {
 }
 
 type Release struct {
-	bundles     []Bundle
-	changelogs  []Changelog
-	components  []Component
-	deprecated  bool
-	description string
-	timestamp   string
-	version     string
+	bundles    []Bundle
+	changelogs []Changelog
+	components []Component
+	deprecated bool
+	timestamp  string
+	version    string
 }
 
 func NewRelease(config ReleaseConfig) (Release, error) {
@@ -36,8 +36,28 @@ func NewRelease(config ReleaseConfig) (Release, error) {
 	var err error
 
 	var changelogs []Changelog
+	{
+		changelogs, err = aggregateReleaseChangelogs(config.Bundles)
+		if err != nil {
+			return Release{}, microerror.Maskf(invalidConfigError, err.Error())
+		}
+	}
+
 	var components []Component
+	{
+		components, err = aggregateReleaseComponents(config.Bundles)
+		if err != nil {
+			return Release{}, microerror.Maskf(invalidConfigError, err.Error())
+		}
+	}
+
 	var deprecated bool
+	{
+		deprecated, err = aggregateReleaseDeprecated(config.Bundles)
+		if err != nil {
+			return Release{}, microerror.Maskf(invalidConfigError, err.Error())
+		}
+	}
 
 	var timestamp string
 	{
@@ -72,19 +92,15 @@ func (r Release) Bundles() []Bundle {
 }
 
 func (r Release) Changelogs() []Changelog {
-	return r.changelogs
+	return CopyChangelogs(r.changelogs)
 }
 
 func (r Release) Components() []Component {
-	return r.components
+	return CopyComponents(r.components)
 }
 
 func (r Release) Deprecated() bool {
 	return r.deprecated
-}
-
-func (r Release) Description() string {
-	return r.description
 }
 
 func (r Release) Timestamp() string {
@@ -93,6 +109,36 @@ func (r Release) Timestamp() string {
 
 func (r Release) Version() string {
 	return r.version
+}
+
+func aggregateReleaseChangelogs(bundles []Bundle) ([]Changelog, error) {
+	var changelogs []Changelog
+
+	for _, b := range bundles {
+		changelogs = append(changelogs, b.Changelogs...)
+	}
+
+	return changelogs, nil
+}
+
+func aggregateReleaseComponents(bundles []Bundle) ([]Component, error) {
+	var components []Component
+
+	for _, b := range bundles {
+		components = append(components, b.Components...)
+	}
+
+	return components, nil
+}
+
+func aggregateReleaseDeprecated(bundles []Bundle) (bool, error) {
+	for _, b := range bundles {
+		if b.Deprecated == true {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func aggregateReleaseTimestamp(bundles []Bundle) (string, error) {
@@ -126,4 +172,15 @@ func aggregateReleaseVersion(bundles []Bundle) (string, error) {
 	version := fmt.Sprintf("%d.%d.%d", major, minor, patch)
 
 	return version, nil
+}
+
+func GetNewestRelease(releases []Release) (Release, error) {
+	if len(releases) == 0 {
+		return Release{}, microerror.Maskf(executionFailedError, "releases must not be empty")
+	}
+
+	s := SortReleasesByVersion(releases)
+	sort.Sort(s)
+
+	return s[len(s)-1], nil
 }

@@ -1,4 +1,3 @@
-
 package: github.com/giantswarm/endpoint-operator
 import:
 - package: github.com/giantswarm/microerror
