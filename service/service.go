@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenk/backoff"
+	"github.com/cenkalti/backoff"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -15,7 +15,6 @@ import (
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/operatorkit/client/k8sclient"
 	"github.com/giantswarm/operatorkit/framework"
-	"github.com/giantswarm/operatorkit/framework/resource/logresource"
 	"github.com/giantswarm/operatorkit/framework/resource/metricsresource"
 	"github.com/giantswarm/operatorkit/framework/resource/retryresource"
 	"github.com/giantswarm/operatorkit/informer"
@@ -108,13 +107,6 @@ func New(config Config) (*Service, error) {
 			newEndpointResource,
 		}
 
-		logWrapConfig := logresource.DefaultWrapConfig()
-		logWrapConfig.Logger = config.Logger
-		resources, err = logresource.Wrap(resources, logWrapConfig)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
-
 		retryWrapConfig := retryresource.DefaultWrapConfig()
 		retryWrapConfig.BackOffFactory = func() backoff.BackOff {
 			return backoff.WithMaxTries(backoff.NewExponentialBackOff(), ResourceRetries)
@@ -166,7 +158,6 @@ func New(config Config) (*Service, error) {
 	{
 		c := framework.DefaultConfig()
 
-		c.BackOffFactory = framework.DefaultBackOffFactory()
 		c.Informer = newInformer
 		c.Logger = config.Logger
 		c.ResourceRouter = framework.DefaultResourceRouter(resources)
