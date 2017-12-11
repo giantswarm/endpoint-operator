@@ -14,6 +14,18 @@ spec:
       labels:
         app: endpoint-operator
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - endpoint-operator
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       volumes:
       - name: endpoint-operator-configmap
         configMap:
@@ -22,18 +34,6 @@ spec:
           - key: config.yml
             path: config.yml
       containers:
-        affinity:
-          podAntiAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                    - endpoint-operator
-                topologyKey: kubernetes.io/hostname
-              weight: 100
       - name: endpoint-operator
         image: quay.io/giantswarm/endpoint-operator:[[ .SHA ]]
         args:
