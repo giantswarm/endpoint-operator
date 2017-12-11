@@ -6,7 +6,7 @@ metadata:
   labels:
     app: endpoint-operator
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: Recreate
   template:
@@ -22,6 +22,18 @@ spec:
           - key: config.yml
             path: config.yml
       containers:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                    - endpoint-operator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       - name: endpoint-operator
         image: quay.io/giantswarm/endpoint-operator:[[ .SHA ]]
         args:
