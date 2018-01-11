@@ -6,6 +6,12 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - pods
+    verbs:
+      - watch
+  - apiGroups:
+      - ""
+    resources:
       - services
     verbs:
       - get
