@@ -33,6 +33,7 @@ spec:
           items:
           - key: config.yml
             path: config.yml
+      serviceAccountName: endpoint-operator
       containers:
       - name: endpoint-operator
         image: quay.io/giantswarm/endpoint-operator:[[ .SHA ]]
