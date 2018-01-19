@@ -1,0 +1,96 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: endpoint-operator
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - get
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    resourceNames:
+      - endpoint-operator-pull-secret
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    resourceNames:
+      - endpoint-operator-configmap
+    verbs:
+      - get
+  - nonResourceURLs:
+      - "/"
+      - "/healthz"
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: endpoint-operator
+subjects:
+  - kind: ServiceAccount
+    name: endpoint-operator
+    namespace: giantswarm
+roleRef:
+  kind: ClusterRole
+  name: endpoint-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: endpoint-operator-psp
+rules:
+  - apiGroups:
+      - extensions
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+    resourceNames:
+      - endpoint-operator-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: endpoint-operator-psp
+subjects:
+  - kind: ServiceAccount
+    name: endpoint-operator
+    namespace: giantswarm
+roleRef:
+  kind: ClusterRole
+  name: endpoint-operator-psp
+  apiGroup: rbac.authorization.k8s.io
+
