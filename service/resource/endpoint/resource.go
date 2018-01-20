@@ -69,6 +69,9 @@ func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationNam
 	if !ok {
 		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", ipAnnotationName)
 	}
+	if ipAnnotationValue == "" {
+		return "", "", microerror.Maskf(missingAnnotationError, "empty annotation '%s'", ipAnnotationName)
+	}
 	serviceAnnotationValue, ok = pod.GetAnnotations()[serviceAnnotationName]
 	if !ok {
 		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", serviceAnnotationName)

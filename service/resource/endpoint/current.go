@@ -19,8 +19,8 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 
 	r.logger.Log("pod", pod.GetName(), "debug", "looking for annotations on pod")
 	serviceNamespace := pod.GetNamespace()
-	podIP, serviceName, err := getAnnotations(*pod, IPAnnotation, ServiceAnnotation)
-	if IsMissingAnnotationError(err) || podIP == "" {
+	_, serviceName, err := getAnnotations(*pod, IPAnnotation, ServiceAnnotation)
+	if IsMissingAnnotationError(err) {
 		canceledcontext.SetCanceled(ctx)
 		if canceledcontext.IsCanceled(ctx) {
 			r.logger.Log("pod", pod.GetName(), "debug", fmt.Sprintf("canceling reconciliation for pod,%#v", microerror.Mask(err)))
