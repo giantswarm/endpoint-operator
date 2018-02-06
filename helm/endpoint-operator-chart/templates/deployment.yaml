@@ -15,6 +15,15 @@ spec:
         app: endpoint-operator
     spec:
       affinity:
+        # NOTE: Do not run pod on masters. This is only to mitigate reboot issue in centaur.
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: role
+                operator: NotIn
+                values:
+                - master
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - podAffinityTerm:
