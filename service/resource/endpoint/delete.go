@@ -15,6 +15,10 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState inter
 		return microerror.Mask(err)
 	}
 
+	if !isEmptyEndpoint(*k8sEndpoint) {
+		return nil
+	}
+
 	err = r.k8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Delete(k8sEndpoint.Name, &metav1.DeleteOptions{})
 	if err != nil {
 		return microerror.Mask(err)
@@ -28,13 +32,9 @@ func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desire
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-
 	patch := framework.NewPatch()
-	if isEmptyEndpoint(*k8sEndpoint) {
-		patch.SetDeleteChange(k8sEndpoint)
-	} else {
-		patch.SetUpdateChange(k8sEndpoint)
-	}
+	patch.SetDeleteChange(k8sEndpoint)
+	patch.SetUpdateChange(k8sEndpoint)
 
 	return patch, nil
 }

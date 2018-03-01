@@ -16,6 +16,10 @@ func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState inter
 		return microerror.Mask(err)
 	}
 
+	if isEmptyEndpoint(*k8sEndpoint) {
+		return nil
+	}
+
 	_, err = r.k8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Update(k8sEndpoint)
 	if err != nil {
 		return microerror.Mask(err)
