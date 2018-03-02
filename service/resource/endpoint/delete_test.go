@@ -55,6 +55,66 @@ func Test_Resource_Endpoint_ApplyDeleteChange(t *testing.T) {
 				},
 			},
 		},
+		{
+			DeleteState: &apiv1.Endpoints{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
+				},
+				Subsets: []apiv1.EndpointSubset{
+					{
+						Addresses: []apiv1.EndpointAddress{
+							{
+								IP: "1.2.3.4",
+							},
+						},
+					},
+				},
+			},
+			ExpectedEndpoints: []*apiv1.Endpoints{
+				{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "TestService",
+						Namespace: "TestNamespace",
+					},
+					Subsets: []apiv1.EndpointSubset{
+						{
+							Addresses: []apiv1.EndpointAddress{
+								{
+									IP: "1.2.3.4",
+								},
+							},
+						},
+					},
+				},
+			},
+			SetupEndpoints: []*apiv1.Endpoints{
+				{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "TestService",
+						Namespace: "TestNamespace",
+					},
+					Subsets: []apiv1.EndpointSubset{
+						{
+							Addresses: []apiv1.EndpointAddress{
+								{
+									IP: "1.2.3.4",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	var err error
 
