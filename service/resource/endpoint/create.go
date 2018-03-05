@@ -9,13 +9,13 @@ import (
 )
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
-	if createState == nil {
-		return nil // Nothing to do.
-	}
-
 	k8sEndpoint, err := toK8sEndpoint(createState)
 	if err != nil {
 		return microerror.Mask(err)
+	}
+
+	if k8sEndpoint == nil {
+		return nil // Nothing to do.
 	}
 
 	_, err = r.k8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Create(k8sEndpoint)
@@ -59,7 +59,7 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 		return nil, nil
 	}
 
-	k8sEndpoint, err := newK8sEndpoint(createState, r.k8sClient)
+	k8sEndpoint, err := r.newK8sEndpoint(createState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}

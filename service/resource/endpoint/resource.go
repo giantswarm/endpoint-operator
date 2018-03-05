@@ -106,7 +106,7 @@ func isEmptyEndpoint(endpoint apiv1.Endpoints) bool {
 	return true
 }
 
-func newK8sEndpoint(endpoint Endpoint, k8sClient kubernetes.Interface) (*apiv1.Endpoints, error) {
+func (r *Resource) newK8sEndpoint(endpoint Endpoint) (*apiv1.Endpoints, error) {
 	k8sAddresses := []apiv1.EndpointAddress{}
 	for _, endpointIP := range endpoint.IPs {
 		k8sAddress := apiv1.EndpointAddress{
@@ -115,7 +115,7 @@ func newK8sEndpoint(endpoint Endpoint, k8sClient kubernetes.Interface) (*apiv1.E
 		k8sAddresses = append(k8sAddresses, k8sAddress)
 	}
 
-	k8sService, err := k8sClient.CoreV1().Services(endpoint.ServiceNamespace).Get(endpoint.ServiceName, metav1.GetOptions{})
+	k8sService, err := r.k8sClient.CoreV1().Services(endpoint.ServiceNamespace).Get(endpoint.ServiceName, metav1.GetOptions{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}

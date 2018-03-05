@@ -10,13 +10,13 @@ import (
 )
 
 func (r *Resource) ApplyUpdateChange(ctx context.Context, obj, updateState interface{}) error {
-	if updateState == nil {
-		return nil // Nothing to do.
-	}
-
 	k8sEndpoint, err := toK8sEndpoint(updateState)
 	if err != nil {
 		return microerror.Mask(err)
+	}
+
+	if k8sEndpoint == nil {
+		return nil // Nothing to do.
 	}
 
 	if isEmptyEndpoint(*k8sEndpoint) {

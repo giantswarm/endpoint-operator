@@ -254,7 +254,7 @@ func Test_Resource_Endpoint_newK8sEndpoint(t *testing.T) {
 				}
 			}
 
-			k8sEndpoints, err := newK8sEndpoint(tc.endpoint, r.k8sClient)
+			k8sEndpoints, err := r.newK8sEndpoint(tc.endpoint)
 
 			switch {
 			case err == nil && tc.errorMatcher == nil: // correct; carry on

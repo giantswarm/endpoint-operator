@@ -19,6 +19,10 @@ func Test_Resource_Endpoint_ApplyDeleteChange(t *testing.T) {
 		SetupEndpoints    []*apiv1.Endpoints
 	}{
 		{
+			DeleteState:       nil,
+			ExpectedEndpoints: nil,
+		},
+		{
 			DeleteState: &apiv1.Endpoints{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "v1",

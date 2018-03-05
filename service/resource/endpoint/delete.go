@@ -10,13 +10,13 @@ import (
 )
 
 func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
-	if deleteState == nil {
-		return nil // Nothing to do.
-	}
-
 	k8sEndpoint, err := toK8sEndpoint(deleteState)
 	if err != nil {
 		return microerror.Mask(err)
+	}
+
+	if k8sEndpoint == nil {
+		return nil // Nothing to do.
 	}
 
 	if !isEmptyEndpoint(*k8sEndpoint) {
@@ -58,21 +58,21 @@ func (r *Resource) newDeleteChangeForDeletePatch(ctx context.Context, obj, curre
 		return nil, microerror.Mask(err)
 	}
 
-	deleteState := Endpoint{
+	endpoint := Endpoint{
 		ServiceName:      currentEndpoint.ServiceName,
 		ServiceNamespace: currentEndpoint.ServiceNamespace,
 		IPs:              cutIPs(currentEndpoint.IPs, desiredEndpoint.IPs),
 	}
-	if len(deleteState.IPs) > 0 {
+	if len(endpoint.IPs) > 0 {
 		return nil, nil
 	}
 
-	k8sEndpoint, err := newK8sEndpoint(deleteState, r.k8sClient)
+	deleteState, err := r.newK8sEndpoint(endpoint)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	return k8sEndpoint, nil
+	return deleteState, nil
 }
 
 func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*apiv1.Endpoints, error) {
@@ -86,20 +86,20 @@ func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, curre
 		return nil, microerror.Mask(err)
 	}
 
-	deleteState := Endpoint{
+	endpoint := Endpoint{
 		ServiceName:      currentEndpoint.ServiceName,
 		ServiceNamespace: currentEndpoint.ServiceNamespace,
 		IPs:              cutIPs(currentEndpoint.IPs, desiredEndpoint.IPs),
 	}
 
-	if len(deleteState.IPs) == 0 {
+	if len(endpoint.IPs) == 0 {
 		return nil, nil
 	}
 
-	k8sEndpoint, err := newK8sEndpoint(deleteState, r.k8sClient)
+	updateState, err := r.newK8sEndpoint(endpoint)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	return k8sEndpoint, nil
+	return updateState, nil
 }
