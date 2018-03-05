@@ -21,16 +21,60 @@ type Config struct {
 	Logger    micrologger.Logger
 }
 
+type Resource struct {
+	k8sClient kubernetes.Interface
+	logger    micrologger.Logger
+}
+
+func (r *Resource) Name() string {
+	return Name
+}
+
+func (r *Resource) Underlying() framework.Resource {
+	return r
+}
+
+func (r *Resource) newK8sEndpoint(endpoint Endpoint) (*apiv1.Endpoints, error) {
+	k8sAddresses := []apiv1.EndpointAddress{}
+	for _, endpointIP := range endpoint.IPs {
+		k8sAddress := apiv1.EndpointAddress{
+			IP: endpointIP,
+		}
+		k8sAddresses = append(k8sAddresses, k8sAddress)
+	}
+
+	k8sService, err := r.k8sClient.CoreV1().Services(endpoint.ServiceNamespace).Get(endpoint.ServiceName, metav1.GetOptions{})
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	k8sEndpoint := &apiv1.Endpoints{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      endpoint.ServiceName,
+			Namespace: endpoint.ServiceNamespace,
+		},
+		Subsets: []apiv1.EndpointSubset{
+			{
+				Ports: serviceToPorts(k8sService),
+			},
+		},
+	}
+
+	for i := range k8sEndpoint.Subsets {
+		k8sEndpoint.Subsets[i].Addresses = k8sAddresses
+	}
+
+	return k8sEndpoint, nil
+}
+
 func DefaultConfig() Config {
 	return Config{
 		K8sClient: nil,
 		Logger:    nil,
 	}
-}
-
-type Resource struct {
-	k8sClient kubernetes.Interface
-	logger    micrologger.Logger
 }
 
 func New(config Config) (*Resource, error) {
@@ -46,14 +90,6 @@ func New(config Config) (*Resource, error) {
 		logger:    config.Logger,
 	}
 	return resource, nil
-}
-
-func (r *Resource) Name() string {
-	return Name
-}
-
-func (r *Resource) Underlying() framework.Resource {
-	return r
 }
 
 func cutIPs(base []string, cutset []string) []string {
@@ -104,42 +140,6 @@ func isEmptyEndpoint(endpoint apiv1.Endpoints) bool {
 		}
 	}
 	return true
-}
-
-func (r *Resource) newK8sEndpoint(endpoint Endpoint) (*apiv1.Endpoints, error) {
-	k8sAddresses := []apiv1.EndpointAddress{}
-	for _, endpointIP := range endpoint.IPs {
-		k8sAddress := apiv1.EndpointAddress{
-			IP: endpointIP,
-		}
-		k8sAddresses = append(k8sAddresses, k8sAddress)
-	}
-
-	k8sService, err := r.k8sClient.CoreV1().Services(endpoint.ServiceNamespace).Get(endpoint.ServiceName, metav1.GetOptions{})
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	k8sEndpoint := &apiv1.Endpoints{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      endpoint.ServiceName,
-			Namespace: endpoint.ServiceNamespace,
-		},
-		Subsets: []apiv1.EndpointSubset{
-			{
-				Ports: serviceToPorts(k8sService),
-			},
-		},
-	}
-
-	for i := range k8sEndpoint.Subsets {
-		k8sEndpoint.Subsets[i].Addresses = k8sAddresses
-	}
-
-	return k8sEndpoint, nil
 }
 
 func removeIP(ips []string, ip string) []string {
