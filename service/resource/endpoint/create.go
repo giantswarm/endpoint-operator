@@ -9,6 +9,10 @@ import (
 )
 
 func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState interface{}) error {
+	if createState == nil {
+		return nil // Nothing to do.
+	}
+
 	k8sEndpoint, err := toK8sEndpoint(createState)
 	if err != nil {
 		return microerror.Mask(err)
