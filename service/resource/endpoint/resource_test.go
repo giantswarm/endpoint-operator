@@ -19,7 +19,7 @@ func Test_Resource_Endpoint_cutIPs(t *testing.T) {
 		errorMatcher func(error) bool
 	}{
 		{
-			name: "case 0: Without adresses, empty k8sEndpoint desired",
+			name: "case 0: Base has one more address than the cutset",
 			base: []string{
 				"1.1.1.1",
 				"0.0.0.0",
@@ -33,7 +33,7 @@ func Test_Resource_Endpoint_cutIPs(t *testing.T) {
 			errorMatcher: nil,
 		},
 		{
-			name: "case 1: Without adresses, empty k8sEndpoint desired",
+			name: "case 1: Base and cutset have the same addresses",
 			base: []string{
 				"1.1.1.1",
 			},
@@ -44,7 +44,7 @@ func Test_Resource_Endpoint_cutIPs(t *testing.T) {
 			errorMatcher: nil,
 		},
 		{
-			name: "case 2: Without adresses, empty k8sEndpoint desired",
+			name: "case 2: Cutset has one more address than base",
 			base: []string{
 				"1.1.1.1",
 			},
