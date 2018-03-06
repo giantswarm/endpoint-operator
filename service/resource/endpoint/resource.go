@@ -26,6 +26,21 @@ type Resource struct {
 	logger    micrologger.Logger
 }
 
+func New(config Config) (*Resource, error) {
+	if config.K8sClient == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
+	}
+	if config.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
+	}
+
+	resource := &Resource{
+		k8sClient: config.K8sClient,
+		logger:    config.Logger,
+	}
+	return resource, nil
+}
+
 func (r *Resource) Name() string {
 	return Name
 }
@@ -75,21 +90,6 @@ func DefaultConfig() Config {
 		K8sClient: nil,
 		Logger:    nil,
 	}
-}
-
-func New(config Config) (*Resource, error) {
-	if config.K8sClient == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
-	}
-	if config.Logger == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
-	}
-
-	resource := &Resource{
-		k8sClient: config.K8sClient,
-		logger:    config.Logger,
-	}
-	return resource, nil
 }
 
 func cutIPs(base []string, cutset []string) []string {
