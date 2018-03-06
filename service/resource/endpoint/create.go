@@ -41,24 +41,24 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 		return nil, nil // Nothing to do.
 	}
 
-	createState := &Endpoint{
+	endpoint := &Endpoint{
 		ServiceName:      desiredEndpoint.ServiceName,
 		ServiceNamespace: desiredEndpoint.ServiceNamespace,
 	}
 	for _, desiredIP := range desiredEndpoint.IPs {
-		if !containsIP(createState.IPs, desiredIP) {
-			createState.IPs = append(createState.IPs, desiredIP)
+		if !containsIP(endpoint.IPs, desiredIP) {
+			endpoint.IPs = append(endpoint.IPs, desiredIP)
 		}
 	}
 
-	if len(createState.IPs) == 0 {
+	if len(endpoint.IPs) == 0 {
 		return nil, nil // Nothing to do.
 	}
 
-	k8sEndpoint, err := r.newK8sEndpoint(createState)
+	createState, err := r.newK8sEndpoint(endpoint)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	return k8sEndpoint, nil
+	return createState, nil
 }

@@ -65,30 +65,30 @@ func (r *Resource) newUpdateChange(ctx context.Context, obj, currentState, desir
 		return nil, nil // Nothing to do.
 	}
 
-	createState := &Endpoint{
+	endpoint := &Endpoint{
 		ServiceName:      desiredEndpoint.ServiceName,
 		ServiceNamespace: desiredEndpoint.ServiceNamespace,
 	}
 	for _, currentIP := range currentEndpoint.IPs {
-		if !containsIP(createState.IPs, currentIP) {
-			createState.IPs = append(createState.IPs, currentIP)
+		if !containsIP(endpoint.IPs, currentIP) {
+			endpoint.IPs = append(endpoint.IPs, currentIP)
 		}
 	}
 	for _, desiredIP := range desiredEndpoint.IPs {
-		if !containsIP(createState.IPs, desiredIP) {
-			createState.IPs = append(createState.IPs, desiredIP)
+		if !containsIP(endpoint.IPs, desiredIP) {
+			endpoint.IPs = append(endpoint.IPs, desiredIP)
 		}
 	}
 
-	if len(createState.IPs) == 0 {
+	if len(endpoint.IPs) == 0 {
 		// Nothing to do.
 		return nil, nil
 	}
 
-	k8sEndpoint, err := r.newK8sEndpoint(createState)
+	updateState, err := r.newK8sEndpoint(endpoint)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	return k8sEndpoint, nil
+	return updateState, nil
 }
