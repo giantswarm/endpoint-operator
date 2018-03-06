@@ -21,6 +21,13 @@ type Config struct {
 	Logger    micrologger.Logger
 }
 
+func DefaultConfig() Config {
+	return Config{
+		K8sClient: nil,
+		Logger:    nil,
+	}
+}
+
 type Resource struct {
 	k8sClient kubernetes.Interface
 	logger    micrologger.Logger
@@ -83,13 +90,6 @@ func (r *Resource) newK8sEndpoint(endpoint *Endpoint) (*apiv1.Endpoints, error) 
 	}
 
 	return k8sEndpoint, nil
-}
-
-func DefaultConfig() Config {
-	return Config{
-		K8sClient: nil,
-		Logger:    nil,
-	}
 }
 
 func cutIPs(base []string, cutset []string) []string {
