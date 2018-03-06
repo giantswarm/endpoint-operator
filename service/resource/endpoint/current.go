@@ -51,5 +51,5 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 			}
 		}
 	}
-	return currentEndpoint, nil
+	return &currentEndpoint, nil
 }

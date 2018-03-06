@@ -29,7 +29,7 @@ func Test_Resource_Endpoint_GetDesiredState(t *testing.T) {
 					},
 				},
 			},
-			ExpectedEndpoint: Endpoint{
+			ExpectedEndpoint: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},

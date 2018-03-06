@@ -93,7 +93,7 @@ func Test_Resource_Endpoint_GetCurrentState(t *testing.T) {
 					},
 				},
 			},
-			ExpectedEndpoints: Endpoint{
+			ExpectedEndpoints: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -132,7 +132,7 @@ func Test_Resource_Endpoint_GetCurrentState(t *testing.T) {
 					},
 				},
 			},
-			ExpectedEndpoints: Endpoint{
+			ExpectedEndpoints: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 					"1.2.3.4",
@@ -179,7 +179,7 @@ func Test_Resource_Endpoint_GetCurrentState(t *testing.T) {
 					},
 				},
 			},
-			ExpectedEndpoints: Endpoint{
+			ExpectedEndpoints: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 					"1.2.3.4",

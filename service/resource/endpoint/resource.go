@@ -6,6 +6,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/giantswarm/operatorkit/framework"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -55,6 +56,59 @@ func (r *Resource) Underlying() framework.Resource {
 	return r
 }
 
+func (r *Resource) newK8sEndpoint(endpoint *Endpoint) (*apiv1.Endpoints, error) {
+	k8sAddresses := []apiv1.EndpointAddress{}
+	for _, endpointIP := range endpoint.IPs {
+		k8sAddress := apiv1.EndpointAddress{
+			IP: endpointIP,
+		}
+		k8sAddresses = append(k8sAddresses, k8sAddress)
+	}
+
+	k8sService, err := r.k8sClient.CoreV1().Services(endpoint.ServiceNamespace).Get(endpoint.ServiceName, metav1.GetOptions{})
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	k8sEndpoint := &apiv1.Endpoints{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      endpoint.ServiceName,
+			Namespace: endpoint.ServiceNamespace,
+		},
+		Subsets: []apiv1.EndpointSubset{
+			{
+				Ports: serviceToPorts(k8sService),
+			},
+		},
+	}
+
+	for i := range k8sEndpoint.Subsets {
+		k8sEndpoint.Subsets[i].Addresses = k8sAddresses
+	}
+
+	return k8sEndpoint, nil
+}
+
+func cutIPs(base []string, cutset []string) []string {
+	resultIPs := []string{}
+	// Deduplicate entries from base.
+	for _, baseIP := range base {
+		if !containsIP(resultIPs, baseIP) {
+			resultIPs = append(resultIPs, baseIP)
+		}
+	}
+	// Cut the cutset out of base.
+	for _, cutsetIP := range cutset {
+		if containsIP(resultIPs, cutsetIP) {
+			resultIPs = removeIP(resultIPs, cutsetIP)
+		}
+	}
+	return resultIPs
+}
+
 func containsIP(ips []string, ip string) bool {
 	for _, foundIP := range ips {
 		if foundIP == ip {
@@ -77,6 +131,15 @@ func getAnnotations(pod apiv1.Pod, ipAnnotationName string, serviceAnnotationNam
 		return "", "", microerror.Maskf(missingAnnotationError, "expected annotation '%s' to be set", serviceAnnotationName)
 	}
 	return ipAnnotationValue, serviceAnnotationValue, nil
+}
+
+func isEmptyEndpoint(endpoint apiv1.Endpoints) bool {
+	for _, subset := range endpoint.Subsets {
+		if len(subset.Addresses) > 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func removeIP(ips []string, ip string) []string {
@@ -103,15 +166,26 @@ func serviceToPorts(s *apiv1.Service) []apiv1.EndpointPort {
 	return ports
 }
 
-func toEndpoint(v interface{}) (Endpoint, error) {
+func toEndpoint(v interface{}) (*Endpoint, error) {
 	if v == nil {
-		return Endpoint{}, nil
+		return nil, nil
 	}
-	endpoint, ok := v.(Endpoint)
+	endpoint, ok := v.(*Endpoint)
 	if !ok {
-		return Endpoint{}, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", Endpoint{}, v)
+		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &Endpoint{}, v)
 	}
 	return endpoint, nil
+}
+
+func toK8sEndpoint(v interface{}) (*apiv1.Endpoints, error) {
+	if v == nil {
+		return nil, nil
+	}
+	k8sEndpoint, ok := v.(*apiv1.Endpoints)
+	if !ok {
+		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &apiv1.Endpoints{}, v)
+	}
+	return k8sEndpoint, nil
 }
 
 func toPod(v interface{}) (*apiv1.Pod, error) {

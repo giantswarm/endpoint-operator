@@ -2,7 +2,6 @@ package endpoint
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/framework"
@@ -11,40 +10,20 @@ import (
 )
 
 func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState interface{}) error {
-	endpointToApply, err := toEndpoint(deleteState)
+	k8sEndpoint, err := toK8sEndpoint(deleteState)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	if reflect.DeepEqual(endpointToApply, Endpoint{}) {
+	if k8sEndpoint == nil {
+		return nil // Nothing to do.
+	}
+
+	if !isEmptyEndpoint(*k8sEndpoint) {
 		return nil
 	}
 
-	k8sAddresses := []apiv1.EndpointAddress{}
-	for _, endpointIP := range endpointToApply.IPs {
-		k8sAddress := apiv1.EndpointAddress{
-			IP: endpointIP,
-		}
-		k8sAddresses = append(k8sAddresses, k8sAddress)
-	}
-
-	if len(k8sAddresses) == 0 {
-		err = r.k8sClient.CoreV1().Endpoints(endpointToApply.ServiceNamespace).Delete(endpointToApply.ServiceName, &metav1.DeleteOptions{})
-		if err != nil {
-			return microerror.Mask(err)
-		}
-		return nil
-	}
-
-	k8sEndpoint, err := r.k8sClient.CoreV1().Endpoints(endpointToApply.ServiceNamespace).Get(endpointToApply.ServiceName, metav1.GetOptions{})
-	if err != nil {
-		return microerror.Mask(err)
-	}
-	for i := range k8sEndpoint.Subsets {
-		k8sEndpoint.Subsets[i].Addresses = k8sAddresses
-	}
-
-	_, err = r.k8sClient.CoreV1().Endpoints(endpointToApply.ServiceNamespace).Update(k8sEndpoint)
+	err = r.k8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Delete(k8sEndpoint.Name, &metav1.DeleteOptions{})
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -53,42 +32,86 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState inter
 }
 
 func (r *Resource) NewDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*framework.Patch, error) {
-	delete, err := r.newDeleteChange(ctx, obj, currentState, desiredState)
+	deleteState, err := r.newDeleteChangeForDeletePatch(ctx, obj, currentState, desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
-
+	updateState, err := r.newDeleteChangeForUpdatePatch(ctx, obj, currentState, desiredState)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
 	patch := framework.NewPatch()
-	patch.SetDeleteChange(delete)
+	patch.SetDeleteChange(deleteState)
+	patch.SetUpdateChange(updateState)
 
 	return patch, nil
 }
 
-func (r *Resource) newDeleteChange(ctx context.Context, obj, currentState, desiredState interface{}) (interface{}, error) {
+func (r *Resource) newDeleteChangeForDeletePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*apiv1.Endpoints, error) {
+	desiredEndpoint, err := toEndpoint(desiredState)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+	if desiredEndpoint == nil {
+		return nil, nil // Nothing to do.
+	}
+
 	currentEndpoint, err := toEndpoint(currentState)
 	if err != nil {
 		return nil, microerror.Mask(err)
+	}
+	if currentEndpoint == nil {
+		return nil, nil // Nothing to do.
+	}
+
+	endpoint := &Endpoint{
+		ServiceName:      currentEndpoint.ServiceName,
+		ServiceNamespace: currentEndpoint.ServiceNamespace,
+		IPs:              cutIPs(currentEndpoint.IPs, desiredEndpoint.IPs),
+	}
+	if len(endpoint.IPs) > 0 {
+		return nil, nil
+	}
+
+	deleteState, err := r.newK8sEndpoint(endpoint)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return deleteState, nil
+}
+
+func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, currentState, desiredState interface{}) (*apiv1.Endpoints, error) {
+	currentEndpoint, err := toEndpoint(currentState)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+	if currentEndpoint == nil {
+		return nil, nil // Nothing to do.
 	}
 
 	desiredEndpoint, err := toEndpoint(desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+	if desiredEndpoint == nil {
+		return nil, nil // Nothing to do.
+	}
 
-	deleteState := Endpoint{
+	endpoint := &Endpoint{
 		ServiceName:      currentEndpoint.ServiceName,
 		ServiceNamespace: currentEndpoint.ServiceNamespace,
-	}
-	for _, currentIP := range currentEndpoint.IPs {
-		if !containsIP(deleteState.IPs, currentIP) {
-			deleteState.IPs = append(deleteState.IPs, currentIP)
-		}
-	}
-	for _, desiredIP := range desiredEndpoint.IPs {
-		if containsIP(deleteState.IPs, desiredIP) {
-			deleteState.IPs = removeIP(deleteState.IPs, desiredIP)
-		}
+		IPs:              cutIPs(currentEndpoint.IPs, desiredEndpoint.IPs),
 	}
 
-	return deleteState, nil
+	if len(endpoint.IPs) == 0 {
+		return nil, nil
+	}
+
+	updateState, err := r.newK8sEndpoint(endpoint)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	return updateState, nil
 }
