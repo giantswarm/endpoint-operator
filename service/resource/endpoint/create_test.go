@@ -97,21 +97,45 @@ func Test_Resource_Endpoint_ApplyCreateChange(t *testing.T) {
 
 func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 	testCases := []struct {
-		CurrentState        interface{}
-		DesiredState        interface{}
-		ExpectedCreateState interface{}
+		CurrentState        *Endpoint
+		DesiredState        *Endpoint
+		ExpectedCreateState *apiv1.Endpoints
 		Obj                 interface{}
 		SetupService        *apiv1.Service
 	}{
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
+				IPs: []string{
+					"1.1.1.1",
+				},
+				ServiceName:      "TestService",
+				ServiceNamespace: "TestNamespace",
+			},
+			SetupService: &apiv1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "TestService",
+					Namespace: "TestNamespace",
+				},
+				Spec: apiv1.ServiceSpec{
+					Ports: []apiv1.ServicePort{
+						{
+							Port: 1234,
+						},
+					},
+				},
+			},
+			ExpectedCreateState: nil,
+		},
+		{
+			CurrentState: nil,
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -156,73 +180,11 @@ func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 			},
 		},
 		{
-			CurrentState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			SetupService: &apiv1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestService",
-					Namespace: "TestNamespace",
-				},
-				Spec: apiv1.ServiceSpec{
-					Ports: []apiv1.ServicePort{
-						{
-							Port: 1234,
-						},
-					},
-				},
-			},
-			ExpectedCreateState: &apiv1.Endpoints{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestService",
-					Namespace: "TestNamespace",
-				},
-				Subsets: []apiv1.EndpointSubset{
-					{
-						Ports: []apiv1.EndpointPort{
-							{
-								Port: 1234,
-							},
-						},
-						Addresses: []apiv1.EndpointAddress{
-							{
-								IP: "1.1.1.1",
-							},
-							{
-								IP: "1.2.3.4",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			CurrentState: Endpoint{
+			CurrentState: nil,
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"5.5.5.5",
 					"1.2.3.4",
-				},
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
-				IPs: []string{
-					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
@@ -262,20 +224,14 @@ func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 							{
 								IP: "1.2.3.4",
 							},
-							{
-								IP: "1.1.1.1",
-							},
 						},
 					},
 				},
 			},
 		},
 		{
-			CurrentState: Endpoint{
-				ServiceName:      "TestService",
-				ServiceNamespace: "TestNamespace",
-			},
-			DesiredState: Endpoint{
+			CurrentState: nil,
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -318,11 +274,6 @@ func Test_Resource_Endpoint_newCreateChange(t *testing.T) {
 					},
 				},
 			},
-		},
-		{
-			CurrentState:        nil,
-			DesiredState:        nil,
-			ExpectedCreateState: (*apiv1.Endpoints)(nil),
 		},
 	}
 	for i, tc := range testCases {

@@ -73,7 +73,7 @@ func Test_Resource_Endpoint_newK8sEndpoint(t *testing.T) {
 	testCases := []struct {
 		name                string
 		setupService        *apiv1.Service
-		endpoint            Endpoint
+		endpoint            *Endpoint
 		expectedK8sEndpoint *apiv1.Endpoints
 		errorMatcher        func(error) bool
 	}{
@@ -88,7 +88,7 @@ func Test_Resource_Endpoint_newK8sEndpoint(t *testing.T) {
 					Ports: []apiv1.ServicePort{},
 				},
 			},
-			endpoint: Endpoint{
+			endpoint: &Endpoint{
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
@@ -119,7 +119,7 @@ func Test_Resource_Endpoint_newK8sEndpoint(t *testing.T) {
 					Ports: []apiv1.ServicePort{},
 				},
 			},
-			endpoint: Endpoint{
+			endpoint: &Endpoint{
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 				IPs: []string{
@@ -161,7 +161,7 @@ func Test_Resource_Endpoint_newK8sEndpoint(t *testing.T) {
 					},
 				},
 			},
-			endpoint: Endpoint{
+			endpoint: &Endpoint{
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 				IPs: []string{
@@ -208,7 +208,7 @@ func Test_Resource_Endpoint_newK8sEndpoint(t *testing.T) {
 					},
 				},
 			},
-			endpoint: Endpoint{
+			endpoint: &Endpoint{
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},

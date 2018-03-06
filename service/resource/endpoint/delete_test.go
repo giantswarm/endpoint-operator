@@ -157,21 +157,21 @@ func Test_Resource_Endpoint_ApplyDeleteChange(t *testing.T) {
 
 func Test_Resource_Endpoint_newDeleteChangeForDeletePatch(t *testing.T) {
 	testCases := []struct {
-		CurrentState        interface{}
-		DesiredState        interface{}
+		CurrentState        *Endpoint
+		DesiredState        *Endpoint
 		ExpectedDeleteState *apiv1.Endpoints
 		Obj                 interface{}
 		SetupService        *apiv1.Service
 	}{
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -212,7 +212,7 @@ func Test_Resource_Endpoint_newDeleteChangeForDeletePatch(t *testing.T) {
 			},
 		},
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 					"1.2.3.4",
@@ -220,7 +220,7 @@ func Test_Resource_Endpoint_newDeleteChangeForDeletePatch(t *testing.T) {
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -243,7 +243,7 @@ func Test_Resource_Endpoint_newDeleteChangeForDeletePatch(t *testing.T) {
 			ExpectedDeleteState: nil,
 		},
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"5.5.5.5",
 					"1.2.3.4",
@@ -251,7 +251,7 @@ func Test_Resource_Endpoint_newDeleteChangeForDeletePatch(t *testing.T) {
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -274,11 +274,11 @@ func Test_Resource_Endpoint_newDeleteChangeForDeletePatch(t *testing.T) {
 			ExpectedDeleteState: nil,
 		},
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -319,7 +319,7 @@ func Test_Resource_Endpoint_newDeleteChangeForDeletePatch(t *testing.T) {
 			},
 		},
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -373,21 +373,21 @@ func Test_Resource_Endpoint_newDeleteChangeForDeletePatch(t *testing.T) {
 
 func Test_Resource_Endpoint_newDeleteChangeForUpdatePatch(t *testing.T) {
 	testCases := []struct {
-		CurrentState        interface{}
-		DesiredState        interface{}
+		CurrentState        *Endpoint
+		DesiredState        *Endpoint
 		ExpectedDeleteState *apiv1.Endpoints
 		Obj                 interface{}
 		SetupService        *apiv1.Service
 	}{
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -410,7 +410,7 @@ func Test_Resource_Endpoint_newDeleteChangeForUpdatePatch(t *testing.T) {
 			ExpectedDeleteState: nil,
 		},
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 					"1.2.3.4",
@@ -418,7 +418,7 @@ func Test_Resource_Endpoint_newDeleteChangeForUpdatePatch(t *testing.T) {
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -463,7 +463,7 @@ func Test_Resource_Endpoint_newDeleteChangeForUpdatePatch(t *testing.T) {
 			},
 		},
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"5.5.5.5",
 					"1.2.3.4",
@@ -471,7 +471,7 @@ func Test_Resource_Endpoint_newDeleteChangeForUpdatePatch(t *testing.T) {
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -519,11 +519,11 @@ func Test_Resource_Endpoint_newDeleteChangeForUpdatePatch(t *testing.T) {
 			},
 		},
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				ServiceName:      "TestService",
 				ServiceNamespace: "TestNamespace",
 			},
-			DesiredState: Endpoint{
+			DesiredState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -546,7 +546,7 @@ func Test_Resource_Endpoint_newDeleteChangeForUpdatePatch(t *testing.T) {
 			ExpectedDeleteState: nil,
 		},
 		{
-			CurrentState: Endpoint{
+			CurrentState: &Endpoint{
 				IPs: []string{
 					"1.1.1.1",
 				},
@@ -567,29 +567,7 @@ func Test_Resource_Endpoint_newDeleteChangeForUpdatePatch(t *testing.T) {
 					},
 				},
 			},
-			ExpectedDeleteState: &apiv1.Endpoints{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "TestService",
-					Namespace: "TestNamespace",
-				},
-				Subsets: []apiv1.EndpointSubset{
-					{
-						Ports: []apiv1.EndpointPort{
-							{
-								Port: 1234,
-							},
-						},
-						Addresses: []apiv1.EndpointAddress{
-							{
-								IP: "1.1.1.1",
-							},
-						},
-					},
-				},
-			},
+			ExpectedDeleteState: nil,
 		},
 	}
 	for i, tc := range testCases {

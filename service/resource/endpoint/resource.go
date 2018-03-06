@@ -34,7 +34,7 @@ func (r *Resource) Underlying() framework.Resource {
 	return r
 }
 
-func (r *Resource) newK8sEndpoint(endpoint Endpoint) (*apiv1.Endpoints, error) {
+func (r *Resource) newK8sEndpoint(endpoint *Endpoint) (*apiv1.Endpoints, error) {
 	k8sAddresses := []apiv1.EndpointAddress{}
 	for _, endpointIP := range endpoint.IPs {
 		k8sAddress := apiv1.EndpointAddress{
@@ -166,13 +166,13 @@ func serviceToPorts(s *apiv1.Service) []apiv1.EndpointPort {
 	return ports
 }
 
-func toEndpoint(v interface{}) (Endpoint, error) {
+func toEndpoint(v interface{}) (*Endpoint, error) {
 	if v == nil {
-		return Endpoint{}, nil
+		return nil, nil
 	}
-	endpoint, ok := v.(Endpoint)
+	endpoint, ok := v.(*Endpoint)
 	if !ok {
-		return Endpoint{}, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", Endpoint{}, v)
+		return nil, microerror.Maskf(wrongTypeError, "expected '%T', got '%T'", &Endpoint{}, v)
 	}
 	return endpoint, nil
 }

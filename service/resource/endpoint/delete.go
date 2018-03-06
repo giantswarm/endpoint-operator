@@ -52,13 +52,19 @@ func (r *Resource) newDeleteChangeForDeletePatch(ctx context.Context, obj, curre
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+	if desiredEndpoint == nil {
+		return nil, nil // Nothing to do.
+	}
 
 	currentEndpoint, err := toEndpoint(currentState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+	if currentEndpoint == nil {
+		return nil, nil // Nothing to do.
+	}
 
-	endpoint := Endpoint{
+	endpoint := &Endpoint{
 		ServiceName:      currentEndpoint.ServiceName,
 		ServiceNamespace: currentEndpoint.ServiceNamespace,
 		IPs:              cutIPs(currentEndpoint.IPs, desiredEndpoint.IPs),
@@ -80,13 +86,19 @@ func (r *Resource) newDeleteChangeForUpdatePatch(ctx context.Context, obj, curre
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+	if currentEndpoint == nil {
+		return nil, nil // Nothing to do.
+	}
 
 	desiredEndpoint, err := toEndpoint(desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+	if desiredEndpoint == nil {
+		return nil, nil // Nothing to do.
+	}
 
-	endpoint := Endpoint{
+	endpoint := &Endpoint{
 		ServiceName:      currentEndpoint.ServiceName,
 		ServiceNamespace: currentEndpoint.ServiceNamespace,
 		IPs:              cutIPs(currentEndpoint.IPs, desiredEndpoint.IPs),

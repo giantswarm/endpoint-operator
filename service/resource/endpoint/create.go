@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/giantswarm/microerror"
-	"k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -13,15 +12,12 @@ func (r *Resource) ApplyCreateChange(ctx context.Context, obj, createState inter
 	if err != nil {
 		return microerror.Mask(err)
 	}
-
 	if k8sEndpoint == nil {
 		return nil // Nothing to do.
 	}
 
 	_, err = r.k8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Create(k8sEndpoint)
-	if errors.IsAlreadyExists(err) {
-		return nil
-	} else if err != nil {
+	if err != nil {
 		return microerror.Mask(err)
 	}
 
@@ -33,20 +29,21 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+	if currentEndpoint != nil {
+		return nil, nil // An endpoint exists already, we should update instead of create.
+	}
 
 	desiredEndpoint, err := toEndpoint(desiredState)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
+	if desiredEndpoint == nil {
+		return nil, nil // Nothing to do.
+	}
 
-	createState := Endpoint{
+	createState := &Endpoint{
 		ServiceName:      desiredEndpoint.ServiceName,
 		ServiceNamespace: desiredEndpoint.ServiceNamespace,
-	}
-	for _, currentIP := range currentEndpoint.IPs {
-		if !containsIP(createState.IPs, currentIP) {
-			createState.IPs = append(createState.IPs, currentIP)
-		}
 	}
 	for _, desiredIP := range desiredEndpoint.IPs {
 		if !containsIP(createState.IPs, desiredIP) {
@@ -55,8 +52,7 @@ func (r *Resource) newCreateChange(ctx context.Context, obj, currentState, desir
 	}
 
 	if len(createState.IPs) == 0 {
-		// Nothing to do.
-		return nil, nil
+		return nil, nil // Nothing to do.
 	}
 
 	k8sEndpoint, err := r.newK8sEndpoint(createState)
