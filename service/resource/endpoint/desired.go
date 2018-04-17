@@ -17,7 +17,7 @@ func (r *Resource) GetDesiredState(ctx context.Context, obj interface{}) (interf
 		return nil, microerror.Maskf(err, "an error occurred while fetching the annotations of the pod")
 	}
 
-	desiredEndpoint := Endpoint{
+	desiredEndpoint := &Endpoint{
 		IPs: []string{
 			endpointIP,
 		},
