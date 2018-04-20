@@ -35,7 +35,7 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 	}
 
 	{
-		_, ok := pod.GetAnnotations()[podWatcherLabel]
+		_, ok := pod.GetLabels()[podWatcherLabel]
 		if ok {
 			canceledcontext.SetCanceled(ctx)
 			if canceledcontext.IsCanceled(ctx) {
