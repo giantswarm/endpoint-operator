@@ -11,6 +11,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	podWatcherLabel = "kvm-operator.giantswarm.io/pod-watcher"
+)
+
 func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interface{}, error) {
 	pod, err := toPod(obj)
 	if err != nil {
@@ -28,6 +32,17 @@ func (r *Resource) GetCurrentState(ctx context.Context, obj interface{}) (interf
 		}
 	} else if err != nil {
 		return nil, microerror.Maskf(err, "an error occurred while fetching the annotations of the pod")
+	}
+
+	{
+		_, ok := pod.GetLabels()[podWatcherLabel]
+		if ok {
+			canceledcontext.SetCanceled(ctx)
+			if canceledcontext.IsCanceled(ctx) {
+				r.logger.Log("pod", pod.GetName(), "debug", "canceling reconciliation for pod due to pod watcher annotation")
+				return nil, nil
+			}
+		}
 	}
 
 	currentEndpoint := Endpoint{
