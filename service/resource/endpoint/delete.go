@@ -2,7 +2,6 @@ package endpoint
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/operatorkit/framework"
@@ -24,14 +23,10 @@ func (r *Resource) ApplyDeleteChange(ctx context.Context, obj, deleteState inter
 		return nil
 	}
 
-	r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleting endpoint '%s'", k8sEndpoint.GetName()))
-
 	err = r.k8sClient.CoreV1().Endpoints(k8sEndpoint.Namespace).Delete(k8sEndpoint.Name, &metav1.DeleteOptions{})
 	if err != nil {
 		return microerror.Mask(err)
 	}
-
-	r.logger.LogCtx(ctx, "level", "debug", "message", fmt.Sprintf("deleted endpoint '%s'", k8sEndpoint.GetName()))
 
 	return nil
 }
