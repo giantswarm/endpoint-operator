@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: endpoint-operator
+      annotations:
+        releasetime: {{ $.Release.Time }}
     spec:
       affinity:
         # NOTE: Do not run pod on masters. This is only to mitigate reboot issue in centaur.
